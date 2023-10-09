@@ -1,39 +1,43 @@
 from microbit import *
 
-display.scroll("FOO", wait=False)
+display.scroll("42", wait=False)
 
-uart.init(tx=pin2, rx=pin1)
+def acc_byte(v):
+    return int(min(v, 1000) / 1000 * 0xFF)
 
-A_PRESS = 1
-A_RELEASE = 2
-B_PRESS = 3
-B_RELEASE = 4
+uart.init(tx=pin1, rx=pin2)
 
+PKG_BEGIN = 0xBE
+A_BIT = 1
+B_BIT = 2
+PKG_END = 0xEF
 
-def send_event(ev):
-    uart.write(bytes([ev]))
-
-
-class Button:
-    def __init__(self, button, press_event, release_event):
-        self.button = button
-        self.press_event = press_event
-        self.release_event = release_event
-        self.pressed = False
-
-    def check_state(self):
-        if self.button.is_pressed() and not self.pressed:
-            self.pressed = True
-            send_event(self.press_event)
-        elif not self.button.is_pressed() and self.pressed:
-            self.pressed = False
-            send_event(self.release_event)
-
-
-btn_a = Button(button_a, A_PRESS, A_RELEASE)
-btn_b = Button(button_b, B_PRESS, B_RELEASE)
-
+main_ready = False
+while not uart.any():
+    uart.write(bytes([0]))
+    sleep(100)
+uart.write(bytes([1]))
 
 while True:
-    btn_a.check_state()
-    btn_b.check_state()
+    v = uart.read(1)
+    if v is not None:
+        b = v[0]
+        if b == 0:
+            main_ready = True
+        else:
+            display.scroll(str(v, 'ASCII'), loop=False)
+    if main_ready:
+        btn_state = 0
+        if button_a.is_pressed():
+            btn_state |= A_BIT
+        if button_b.is_pressed():
+            btn_state |= B_BIT
+        acc_x = acc_byte(accelerometer.get_x())
+        acc_y = acc_byte(accelerometer.get_y())
+        uart.write(bytes([PKG_BEGIN,
+                          btn_state,
+                          acc_x,
+                          acc_y,
+                          PKG_END]))
+        main_ready = False
+    sleep(100)
