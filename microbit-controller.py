@@ -3,26 +3,31 @@ from microbit import *
 display.scroll("42", wait=False)
 
 def acc_byte(v):
-    return int(min(v, 1000) / 1000 * 0xFF)
+    # Cut off at -1000 or 1000 (1 G),
+    # plus to make a positive integer between 0 and 2000,
+    # divide to a number between 0 and 0xFF,
+    # round down.
+    return int((min(max(v, -1000), 1000) + 1000) / 2000 * 0xFF)
 
 uart.init(tx=pin1, rx=pin2)
 
+ACK = bytes([0])
 PKG_BEGIN = 0xBE
+PKG_END = 0xEF
 A_BIT = 1
 B_BIT = 2
-PKG_END = 0xEF
 
 main_ready = False
-while not uart.any():
+while uart.read(1) != ACK:
     uart.write(bytes([0]))
     sleep(100)
 uart.write(bytes([1]))
+display.show('X', wait=False)
 
 while True:
     v = uart.read(1)
     if v is not None:
-        b = v[0]
-        if b == 0:
+        if v == ACK:
             main_ready = True
         else:
             display.scroll(str(v, 'ASCII'), loop=False)
@@ -41,3 +46,4 @@ while True:
                           PKG_END]))
         main_ready = False
     sleep(100)
+
