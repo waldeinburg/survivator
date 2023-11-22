@@ -1,13 +1,6 @@
+print("Starting ...")
+
 import time
-print("Hello BornHack!")
-# SPDX-FileCopyrightText: 2021 ladyada for Adafruit Industries
-# SPDX-License-Identifier: MIT
-
-"""
-This test will initialize the display using displayio and draw a solid green
-background, a smaller purple rectangle, and some yellow text.
-"""
-
 import os
 
 import board
@@ -18,8 +11,6 @@ import pwmio
 from adafruit_display_text import label
 from adafruit_st7735r import ST7735R
 from busio import UART
-
-from adafruit_slideshow import PlayBackOrder, SlideShow
 
 def join(*xs):
     return '/'.join(x.rstrip('/') for x in xs)
@@ -57,14 +48,27 @@ display_bus = displayio.FourWire(
 	spi, command=tft_dc, chip_select=tft_cs, reset=board.D0
 )
 
-display = ST7735R(display_bus, width=128, height=160, rotation=0, bgr=True, colstart=2, rowstart=1)
+# https://github.com/adafruit/Adafruit_CircuitPython_ST7735R/blob/main/adafruit_st7735r.py
+# Subclasses https://docs.circuitpython.org/en/latest/shared-bindings/displayio/#displayio.Display
+# BGR mode means that highest bits are red, meaning that colors can be written as RGB in source.
+# Using pwmio.PWMOut and altering duty_cycle to set brightness (cf. factory code) seems to be
+# unneccessary boilerblate as the displayio API supports this directly, except that it offers the
+# opportunity to light up the display after the CircuitPython logo display.
+# Setting upper left pixel shows that the first visible point is indeed 2x1.
+display = ST7735R(display_bus, width=128, height=160, bgr=True, colstart=2, rowstart=1, backlight_pin=board.PWM0, brightness=0.5)
 
-# bl = digitalio.DigitalInOut(board.PWM0)
-# bl.direction = digitalio.Direction.OUTPUT
-# bl.value = True
+color_bitmap = displayio.Bitmap(128, 160, 2)
+color_palette = displayio.Palette(2)
+color_palette[0] = 0x000000
+color_palette[1] = 0xFF0000
+color_bitmap[0] = 1
+bg_sprite = displayio.TileGrid(color_bitmap, pixel_shader=color_palette, x=0, y=0)
+splash = displayio.Group()
+splash.append(bg_sprite)
+display.show(splash)
 
-bl = pwmio.PWMOut(board.PWM0, frequency=5000, duty_cycle=0)
-bl.duty_cycle = 60000
+while True:
+    time.sleep(1)
 
 def DrawMenu(currentselected, paths):
     rim_bitmap = displayio.Bitmap(128, 160, 1)
@@ -112,34 +116,7 @@ def DrawMenu(currentselected, paths):
     display.show(menu)
 
 # Make the display context
-splash = displayio.Group()
-display.show(splash)
 
-
-color_bitmap = displayio.Bitmap(128, 160, 1)
-color_palette = displayio.Palette(1)
-color_palette[0] = 0x000000  # black
-
-bg_sprite = displayio.TileGrid(color_bitmap, pixel_shader=color_palette, x=0, y=0)
-splash.append(bg_sprite)
-
-# Create the slideshow object that plays through once alphabetically.
-slideshow = SlideShow(display,
-                      folder="/images",
-                      loop=True,
-                      order=PlayBackOrder.ALPHABETICAL,
-                      dwell=2)
-i=0
-
-while slideshow.update():
-    i+=1
-    if i < 2:
-        pass
-    else:
-        display.show(splash)
-        time.sleep(1)
-        break
-    time.sleep(0.5)
 
 selected = 1
 menu = displayio.Group()
