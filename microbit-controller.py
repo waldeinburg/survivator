@@ -30,7 +30,7 @@ while True:
         if v == ACK:
             main_ready = True
         else:
-            display.scroll(str(v, 'ASCII'), loop=False)
+            display.scroll(str(v, 'ASCII'), loop=False, wait=False)
     if main_ready:
         btn_state = 0
         if button_a.is_pressed():
@@ -45,5 +45,4 @@ while True:
                           acc_y,
                           PKG_END]))
         main_ready = False
-    sleep(100)
 

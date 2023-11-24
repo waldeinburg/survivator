@@ -54,85 +54,32 @@ display_bus = displayio.FourWire(
 # Using pwmio.PWMOut and altering duty_cycle to set brightness (cf. factory code) seems to be
 # unneccessary boilerblate as the displayio API supports this directly, except that it offers the
 # opportunity to light up the display after the CircuitPython logo display.
-# Setting upper left pixel shows that the first visible point is indeed 2x1.
+# Setting upper left pixel shows that the first visible point is indeed 2x1. The usable area is still 128x160.
 display = ST7735R(display_bus, width=128, height=160, bgr=True, colstart=2, rowstart=1, backlight_pin=board.PWM0, brightness=0.5)
 
 color_bitmap = displayio.Bitmap(128, 160, 2)
 color_palette = displayio.Palette(2)
 color_palette[0] = 0x000000
-color_palette[1] = 0xFF0000
-color_bitmap[0] = 1
+color_palette[1] = 0x00FF00
 bg_sprite = displayio.TileGrid(color_bitmap, pixel_shader=color_palette, x=0, y=0)
 splash = displayio.Group()
 splash.append(bg_sprite)
 display.show(splash)
 
-while True:
-    time.sleep(1)
+pos_x = 64
+pos_y = 80
 
-def DrawMenu(currentselected, paths):
-    rim_bitmap = displayio.Bitmap(128, 160, 1)
-    rim_palette = displayio.Palette(1)
-    rim_palette[0] = 0x000000 #black
-    rim_sprite = displayio.TileGrid(rim_bitmap, pixel_shader=rim_palette, x=0,  y=0)
-    menu.append(rim_sprite)
+def set_pixel(x, y, c):
+    color_bitmap[y * 128 + x] = c
 
-    #bg_bitmap = displayio.Bitmap(118, 150, 1)
-    #bg_palette = displayio.Palette(1)
-    #bg_palette[0] = 0x000000 #Black
+# TODO: double-buffer
+def move_dot(x, y):
+    global pos_x, pos_y
+    set_pixel(pos_x, pos_y, 0)
+    set_pixel(x, y, 1)
+    pos_x = x
+    pos_y = y
 
-    #bg_sprite = displayio.TileGrid(bg_bitmap, pixel_shader=bg_palette, x=5, y=5)
-    #menu.append(bg_sprite)
-
-    bh_colors = []
-    bh_colors.append(0x004DFF)
-    bh_colors.append(0x750787)
-    bh_colors.append(0x008026)
-    bh_colors.append(0xFFED00)
-    bh_colors.append(0xFF8C00)
-    bh_colors.append(0xE40303)
-
-    # Draw a smaller colors
-    for i in range(6):
-        inner_bitmap = displayio.Bitmap(8, 8, 1)
-        inner_palette = displayio.Palette(1)
-        inner_palette[0] = bh_colors[i] # color
-        inner_sprite = displayio.TileGrid(inner_bitmap, pixel_shader=inner_palette, x=120, y=100+(i*8))
-        menu.append(inner_sprite)
-
-    it = 0
-    for opt in paths:
-        it+=1
-
-        menu_text0_group = displayio.Group(scale=1, x=8, y=10*it)
-        #print(it)
-        if currentselected == it:
-            menu_text0_area = label.Label(terminalio.FONT, text=opt, color=0xFFFFFF)
-        else:
-            menu_text0_area = label.Label(terminalio.FONT, text=opt, color=0x777777)
-        menu_text0_group.append(menu_text0_area)
-        menu.append(menu_text0_group)
-
-    display.show(menu)
-
-# Make the display context
-
-
-selected = 1
-menu = displayio.Group()
-
-dir_path = r'apps/'
-
-# list to store files
-res = []
-
-# Iterate directory
-for path in os.listdir(dir_path):
-    # check if current path is a file
-    if isfile(join(dir_path, path)):
-        res.append(path)
-
-DrawMenu(selected, res)
 
 SYN = bytes([0])
 ACK = bytes([0])
@@ -162,6 +109,7 @@ def got_pkg_begin():
         return False
     return b[0] == PKG_BEGIN
 
+#uart.write(bytes(b'X'))
 
 while True:
     btn_state = None
@@ -178,30 +126,19 @@ while True:
         send_ready()
         btn_state, acc_x, acc_y, _ = b
 
-    #if BTN_A.value == False:
+    dx = 0
+    dy = 0
+
     if (b is not None and (btn_state & B_BIT or acc_x > 0xA0)) or BTN_A.value == False:
-        uart.write(bytes(b'A'))
-        if selected == 1:
-            pass
-        else:
-            selected-=1
-            DrawMenu(selected, res)
-            time.sleep(0.2)
+        dy = -1
+    elif (b is not None and (btn_state & A_BIT or acc_x < 0x5F)) or BTN_B.value == False:
+        dy = 1
 
-    #if BTN_B.value == False:
-    if (b is not None and (btn_state & A_BIT or acc_x < 0x5F)) or BTN_B.value == False:
-        uart.write(bytes(b'B'))
-        if selected == len(res):
-            pass
-        else:
-            selected+=1
-            DrawMenu(selected, res)
-        time.sleep(0.2)
+    if b is not None and acc_y < 0x5F or BTN_X.value == False:
+        dx = -1
+    elif b is not None and acc_y > 0xA0 or BTN_Y.value == False:
+        dx = 1
 
-    if BTN_X.value == False or BTN_Y.value == False:
-        try:
-            exec(open(join(dir_path, res[selected-1])).read())
-        except:
-            pass
-        DrawMenu(selected, res)
-    pass
+    nx = max(min(pos_x + dx, 127), 0)
+    ny = max(min(pos_y + dy, 159), 0)
+    move_dot(nx, ny)
