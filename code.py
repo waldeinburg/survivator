@@ -1,5 +1,6 @@
 print("Starting ...")
 
+import math
 import time
 import os
 
@@ -11,19 +12,6 @@ import pwmio
 from adafruit_display_text import label
 from adafruit_st7735r import ST7735R
 from busio import UART
-
-def join(*xs):
-    return '/'.join(x.rstrip('/') for x in xs)
-
-
-def isfile(path):
-    try:
-        with open(path):
-            pass
-    except FileNotFoundError:
-        return False
-    else:
-        return True
 
 BTN_A = digitalio.DigitalInOut(board.BTN_A)
 BTN_A.switch_to_input(pull=digitalio.Pull.UP)
@@ -44,9 +32,7 @@ spi = board.SPI()
 tft_cs = board.CS
 tft_dc = board.D1
 
-display_bus = displayio.FourWire(
-	spi, command=tft_dc, chip_select=tft_cs, reset=board.D0
-)
+display_bus = displayio.FourWire(spi, command=tft_dc, chip_select=tft_cs, reset=board.D0)
 
 # https://github.com/adafruit/Adafruit_CircuitPython_ST7735R/blob/main/adafruit_st7735r.py
 # Subclasses https://docs.circuitpython.org/en/latest/shared-bindings/displayio/#displayio.Display
@@ -66,19 +52,34 @@ splash = displayio.Group()
 splash.append(bg_sprite)
 display.show(splash)
 
-pos_x = 64
-pos_y = 80
+deg10 = math.radians(10)
+cos10 = math.cos(deg10)
+sin10 = math.sin(deg10)
+# Screen width is 28 mm, resolution 128, i.e.:
+px_per_m = 4571
+# Decisions based on feeling.
+physics_scale = 0.14
+bounce_factor = 0.31
+
+prev_acc_x = 0
+prev_acc_y = 0
+pos_x = 64.0
+pos_y = 80.0
+vel_x = 0
+vel_y = 0
+prev_x = int(pos_x)
+prev_y = int(pos_y)
 
 def set_pixel(x, y, c):
     color_bitmap[y * 128 + x] = c
 
 # TODO: double-buffer
 def move_dot(x, y):
-    global pos_x, pos_y
-    set_pixel(pos_x, pos_y, 0)
+    global prev_x, prev_y
+    set_pixel(prev_x, prev_y, 0)
     set_pixel(x, y, 1)
-    pos_x = x
-    pos_y = y
+    prev_x = x
+    prev_y = y
 
 
 SYN = bytes([0])
@@ -94,8 +95,17 @@ uart = UART(baudrate=9600, tx=board.UART_TX2, rx=board.UART_RX2, bits=8, parity=
 def send_ready():
     uart.write(ACK)
 
+print("Waiting for controller SYN")
+timeout = 10
 while uart.read(1) != SYN:
-    print("Waiting for controller SYN")
+    if timeout > 0:
+        timeout -= 1
+        if timeout == 0:
+            info_group = displayio.Group(scale=1, x=8, y=30)
+            info_area = label.Label(terminalio.FONT, text="Press reset on\nMicrobit", color=0xFF0000)
+            info_group.append(info_area)
+            splash.append(info_group)
+
 print("Received SYN")
 send_ready()
 while uart.read(1) != SYN_ACK:
@@ -109,36 +119,66 @@ def got_pkg_begin():
         return False
     return b[0] == PKG_BEGIN
 
-#uart.write(bytes(b'X'))
+prev_time = time.monotonic()
 
 while True:
-    btn_state = None
-    acc_x = None
-    acc_y = None
     while not got_pkg_begin():
         pass
     b = uart.read(4)
-    if b is not None:
-        if len(b) != 4 or b[3] != PKG_END:
-            uart.reset_input_buffer()
-            send_ready()
-            continue
+    if b is None:
+        continue
+
+    if len(b) != 4 or b[3] != PKG_END:
+        uart.reset_input_buffer()
         send_ready()
-        btn_state, acc_x, acc_y, _ = b
+        continue
+    send_ready()
+    btn_state, acc_ctrl_raw_x, acc_ctrl_raw_y, _ = b
 
-    dx = 0
-    dy = 0
+    cur_time = time.monotonic()
+    time_diff = cur_time - prev_time;
+    prev_time = cur_time
 
-    if (b is not None and (btn_state & B_BIT or acc_x > 0xA0)) or BTN_A.value == False:
-        dy = -1
-    elif (b is not None and (btn_state & A_BIT or acc_x < 0x5F)) or BTN_B.value == False:
-        dy = 1
+    if btn_state & B_BIT or BTN_A.value == False:
+        uart.write(bytes(b'A'))
+    elif btn_state & A_BIT or BTN_B.value == False:
+        uart.write(bytes(b'B'))
+    elif BTN_X.value == False:
+        uart.write(bytes(b'X'))
+    elif BTN_Y.value == False:
+        uart.write(bytes(b'Y'))
 
-    if b is not None and acc_y < 0x5F or BTN_X.value == False:
-        dx = -1
-    elif b is not None and acc_y > 0xA0 or BTN_Y.value == False:
-        dx = 1
+    # Controller sends a value between -1G and 1G for each axis. It's converted to a value between 0 and 0xFE, i.e. 254.
+    # Thus zero is 127.
+    acc_ctrl_x = (acc_ctrl_raw_x - 127) / 127
+    # The accelerometer orientation on the Microbit is the opposite of the expected coordinate system.
+    # Invert here and keep the  math easier to understand instead of moving parts around.
+    acc_ctrl_y = (acc_ctrl_raw_y - 127) / -127
 
-    nx = max(min(pos_x + dx, 127), 0)
-    ny = max(min(pos_y + dy, 159), 0)
-    move_dot(nx, ny)
+    # The Microbit is slightly angled on the board.
+    acc_x = acc_ctrl_x * sin10 - acc_ctrl_y * cos10
+    # Because of the orientation of the Y-axis, the acceleration is inverted.
+    acc_y = -(acc_ctrl_x * cos10 + acc_ctrl_y * sin10)
+
+    vel_x += acc_x * time_diff
+    vel_y += acc_y * time_diff
+
+    #print(f'acc_ctrl_raw {acc_ctrl_raw_x:3}, {acc_ctrl_raw_y:3} | acc_ctrl {acc_ctrl_x:11}, {acc_ctrl_y:11} | vel {vel_x:11}, {vel_y:11}')
+    dx = vel_x * time_diff * px_per_m * physics_scale
+    dy = vel_y * time_diff * px_per_m * physics_scale
+
+    nx_tmp = pos_x + dx
+    ny_tmp = pos_y + dy
+
+    if nx_tmp < 0 or nx_tmp > 127:
+        vel_x *= -bounce_factor
+    if ny_tmp < 0 or ny_tmp > 159:
+        vel_y *= -bounce_factor
+
+    pos_x = max(min(nx_tmp, 127), 0)
+    pos_y = max(min(ny_tmp, 159), 0)
+
+    move_dot(int(pos_x), int(pos_y))
+
+    # The time precision gets too low if we don't have any latency.
+    time.sleep(0.05)
