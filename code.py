@@ -41,7 +41,10 @@ display_bus = displayio.FourWire(spi, command=tft_dc, chip_select=tft_cs, reset=
 # unneccessary boilerblate as the displayio API supports this directly, except that it offers the
 # opportunity to light up the display after the CircuitPython logo display.
 # Setting upper left pixel shows that the first visible point is indeed 2x1. The usable area is still 128x160.
-display = ST7735R(display_bus, width=128, height=160, bgr=True, colstart=2, rowstart=1, backlight_pin=board.PWM0, brightness=0.5)
+display = ST7735R(display_bus, width=128, height=160, bgr=True,
+    colstart=2, rowstart=1,
+    backlight_pin=board.PWM0, brightness=0.5,
+    auto_refresh=False)
 
 color_bitmap = displayio.Bitmap(128, 160, 2)
 color_palette = displayio.Palette(2)
@@ -73,11 +76,11 @@ prev_y = int(pos_y)
 def set_pixel(x, y, c):
     color_bitmap[y * 128 + x] = c
 
-# TODO: double-buffer
 def move_dot(x, y):
     global prev_x, prev_y
     set_pixel(prev_x, prev_y, 0)
     set_pixel(x, y, 1)
+    display.refresh()
     prev_x = x
     prev_y = y
 
@@ -97,6 +100,7 @@ def send_ready():
 
 print("Waiting for controller SYN")
 timeout = 10
+info_group = None
 while uart.read(1) != SYN:
     if timeout > 0:
         timeout -= 1
@@ -105,6 +109,10 @@ while uart.read(1) != SYN:
             info_area = label.Label(terminalio.FONT, text="Press reset on\nMicrobit", color=0xFF0000)
             info_group.append(info_area)
             splash.append(info_group)
+            display.refresh()
+if info_group is not None:
+    splash.remove(info_group)
+    display.refresh()
 
 print("Received SYN")
 send_ready()
