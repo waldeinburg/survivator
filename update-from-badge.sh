@@ -1,2 +1,3 @@
 #!/usr/bin/env bash
-cp /media/$USER/CIRCUITPY/code.py .
+cd "${0%/*}"
+cp /media/$USER/CIRCUITPY/code.py badge

@@ -74,7 +74,7 @@ prev_x = int(pos_x)
 prev_y = int(pos_y)
 
 def set_pixel(x, y, c):
-    color_bitmap[y * 128 + x] = c
+    color_bitmap[x, y] = c
 
 def move_dot(x, y):
     global prev_x, prev_y
@@ -92,6 +92,12 @@ PKG_BEGIN = 0xBE
 PKG_END = 0xEF
 A_BIT = 1
 B_BIT = 2
+
+TIMER_START = bytes([1])
+TIMER_STOP = bytes([2])
+TIMER_RESET = bytes([3])
+TIMER_SHOW = bytes([4])
+TIMER_HIDE = bytes([5])
 
 uart = UART(baudrate=9600, tx=board.UART_TX2, rx=board.UART_RX2, bits=8, parity=None, stop=1, timeout=0.05)
 
@@ -147,14 +153,19 @@ while True:
     time_diff = cur_time - prev_time;
     prev_time = cur_time
 
-    if btn_state & B_BIT or BTN_A.value == False:
-        uart.write(bytes(b'A'))
-    elif btn_state & A_BIT or BTN_B.value == False:
-        uart.write(bytes(b'B'))
-    elif BTN_X.value == False:
-        uart.write(bytes(b'X'))
-    elif BTN_Y.value == False:
-        uart.write(bytes(b'Y'))
+    if btn_state & A_BIT:
+       pass
+    if btn_state & B_BIT:
+       pass
+    if BTN_A.value == False:
+        uart.write(TIMER_START)
+        uart.write(TIMER_SHOW)
+    if BTN_B.value == False:
+        uart.write(TIMER_STOP)
+    if BTN_X.value == False:
+        uart.write(TIMER_SHOW)
+    if BTN_Y.value == False:
+        uart.write(TIMER_HIDE)
 
     # Controller sends a value between -1G and 1G for each axis. It's converted to a value between 0 and 0xFE, i.e. 254.
     # Thus zero is 127.
