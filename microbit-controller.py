@@ -2,12 +2,9 @@ from microbit import *
 import utime
 import math
 
+
 def now():
     return utime.ticks_us()
-
-
-def digits(n):
-    return int(math.log(n, 10)) + 1
 
 
 SYN = bytes([0])
@@ -17,6 +14,8 @@ PKG_BEGIN = 0xBE
 PKG_END = 0xEF
 A_BIT = 1
 B_BIT = 2
+# A delay reasonable for a relatively continous display after passing 1 min.
+TIMER_SCROLL_DELAY = 180
 
 TIMER_START = bytes([1])
 TIMER_STOP = bytes([2])
@@ -27,6 +26,7 @@ TIMER_HIDE = bytes([5])
 timer_running = False
 timer_tick = now()
 timer_duration = 0
+timer_duration_part_us = 0
 timer_visible = False
 timer_next_display = 0
 
@@ -55,6 +55,41 @@ def send_input_state():
                       PKG_END]))
 
 
+def digits(n):
+    if n == 0:
+        return 1
+    return int(math.log(n, 10)) + 1
+
+
+def format_seconds(sec):
+    res = ''
+    h = sec // 3600
+    hr = sec % 3600
+    m = hr // 60
+    s = hr % 60
+    if h > 0:
+        res = str(h) + ':'
+        if digits(m) == 1:
+            res += '0'
+    if m > 0 or h > 0:
+        res += str(m) + ':'
+        if digits(s) == 1:
+            res += '0'
+    res += str(s)
+    return res
+
+
+def scroll_time():
+    display.scroll(format_seconds(timer_duration),
+                   delay=TIMER_SCROLL_DELAY,
+                   loop=True,
+                   wait=False)
+
+def clear_scroll():
+    # clear() does not stop scroll.
+    display.scroll('')
+
+
 uart.init(tx=pin1, rx=pin2)
 
 warn_timeout = 20
@@ -81,25 +116,33 @@ while True:
         timer_tick = now()
     elif v == TIMER_STOP:
         timer_running = False
+        if timer_visible:
+            scroll_time()
     elif v == TIMER_RESET:
         timer_duration = 0
+        timer_duration_part_us = 0
         timer_next_display = 0
         timer_tick = now()
     elif v == TIMER_SHOW:
         timer_visible = True
         timer_next_display = timer_duration
+        clear_scroll()
+        if not timer_running:
+            scroll_time()
     elif v == TIMER_HIDE:
         timer_visible = False
+        clear_scroll()
         
     if timer_running:
         n = now()
-        if utime.ticks_diff(n, timer_tick) >= 1_000_000:
-            timer_duration += 1
+        diff = timer_duration_part_us + utime.ticks_diff(n, timer_tick)
+        if diff >= 1_000_000:
             timer_tick = n
-            # Approx. 1 sec. per digit is needed
+            timer_duration += diff // 1_000_000
+            timer_duration_part_us = diff % 1_000_000
             if timer_visible and timer_duration >= timer_next_display:
-                timer_next_display = timer_duration + digits(timer_duration)
-                display.scroll(timer_duration,
-                               loop=False,
-                               wait=False)
+                # Approx. 1 sec. per character.
+                timer_str = format_seconds(timer_duration)
+                timer_next_display = timer_duration + len(timer_str)
+                display.scroll(timer_str, delay=TIMER_SCROLL_DELAY, loop=False, wait=False)
 
