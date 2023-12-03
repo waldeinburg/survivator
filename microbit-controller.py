@@ -55,12 +55,6 @@ def send_input_state():
                       PKG_END]))
 
 
-def digits(n):
-    if n == 0:
-        return 1
-    return int(math.log(n, 10)) + 1
-
-
 def format_seconds(sec):
     res = ''
     h = sec // 3600
@@ -69,11 +63,11 @@ def format_seconds(sec):
     s = hr % 60
     if h > 0:
         res = str(h) + ':'
-        if digits(m) == 1:
+        if m < 10:
             res += '0'
     if m > 0 or h > 0:
         res += str(m) + ':'
-        if digits(s) == 1:
+        if s < 10:
             res += '0'
     res += str(s)
     return res
