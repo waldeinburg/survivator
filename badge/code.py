@@ -1,8 +1,8 @@
 print("Starting ...")
 
 import math
-import time
 import os
+import time
 
 import board
 import terminalio
@@ -13,6 +13,16 @@ from adafruit_display_text import label
 from adafruit_st7735r import ST7735R
 from busio import UART
 
+from state import Input, StateMachine
+from playing_state import PlayingState
+
+# Constants
+deg10 = math.radians(10)
+cos10 = math.cos(deg10)
+sin10 = math.sin(deg10)
+gravity_acc = 9.81
+
+# Pull down does not work. I.e. False means pressed.
 BTN_A = digitalio.DigitalInOut(board.BTN_A)
 BTN_A.switch_to_input(pull=digitalio.Pull.UP)
 
@@ -47,43 +57,12 @@ display = ST7735R(display_bus, width=128, height=160, bgr=True,
     auto_refresh=False)
 
 color_bitmap = displayio.Bitmap(128, 160, 2)
-color_palette = displayio.Palette(2)
+color_palette = displayio.Palette(1)
 color_palette[0] = 0x000000
-color_palette[1] = 0x00FF00
 bg_sprite = displayio.TileGrid(color_bitmap, pixel_shader=color_palette, x=0, y=0)
 splash = displayio.Group()
 splash.append(bg_sprite)
 display.show(splash)
-
-deg10 = math.radians(10)
-cos10 = math.cos(deg10)
-sin10 = math.sin(deg10)
-# Screen width is 28 mm, resolution 128, i.e.:
-px_per_m = 4571
-# Decisions based on feeling.
-physics_scale = 0.14
-bounce_factor = 0.31
-
-prev_acc_x = 0
-prev_acc_y = 0
-pos_x = 64.0
-pos_y = 80.0
-vel_x = 0
-vel_y = 0
-prev_x = int(pos_x)
-prev_y = int(pos_y)
-
-def set_pixel(x, y, c):
-    color_bitmap[x, y] = c
-
-def move_dot(x, y):
-    global prev_x, prev_y
-    set_pixel(prev_x, prev_y, 0)
-    set_pixel(x, y, 1)
-    display.refresh()
-    prev_x = x
-    prev_y = y
-
 
 SYN = bytes([0])
 ACK = bytes([0])
@@ -133,7 +112,10 @@ def got_pkg_begin():
         return False
     return b[0] == PKG_BEGIN
 
-prev_time = time.monotonic()
+input = Input()
+machine = StateMachine(display, input)
+machine.add_state(PlayingState())
+machine.set_state('playing')
 
 while True:
     while not got_pkg_begin():
@@ -149,55 +131,26 @@ while True:
     send_ready()
     btn_state, acc_ctrl_raw_x, acc_ctrl_raw_y, _ = b
 
-    cur_time = time.monotonic()
-    time_diff = cur_time - prev_time;
-    prev_time = cur_time
-
-    if btn_state & A_BIT:
-       pass
-    if btn_state & B_BIT:
-       pass
-    if BTN_A.value == False:
-        uart.write(TIMER_START)
-        uart.write(TIMER_SHOW)
-    if BTN_B.value == False:
-        uart.write(TIMER_STOP)
-    if BTN_X.value == False:
-        uart.write(TIMER_SHOW)
-    if BTN_Y.value == False:
-        uart.write(TIMER_HIDE)
+    input.btn_ma = btn_state & A_BIT
+    input.btn_mb = btn_state & B_BIT
+    input.btn_a = not BTN_A.value
+    input.btn_b = not BTN_B.value
+    input.btn_x = not BTN_X.value
+    input.btn_y = not BTN_Y.value
 
     # Controller sends a value between -1G and 1G for each axis. It's converted to a value between 0 and 0xFE, i.e. 254.
-    # Thus zero is 127.
-    acc_ctrl_x = (acc_ctrl_raw_x - 127) / 127
+    # Thus zero is 127. Multiply factor of 1G with the gravity constant to get acceleration in m/s^2.
+    acc_ctrl_x = (acc_ctrl_raw_x - 127) / 127 * gravity_acc
     # The accelerometer orientation on the Microbit is the opposite of the expected coordinate system.
     # Invert here and keep the  math easier to understand instead of moving parts around.
-    acc_ctrl_y = (acc_ctrl_raw_y - 127) / -127
+    acc_ctrl_y = (acc_ctrl_raw_y - 127) / -127 * gravity_acc
 
     # The Microbit is slightly angled on the board.
-    acc_x = acc_ctrl_x * sin10 - acc_ctrl_y * cos10
+    input.acc_x = acc_ctrl_x * sin10 - acc_ctrl_y * cos10
     # Because of the orientation of the Y-axis, the acceleration is inverted.
-    acc_y = -(acc_ctrl_x * cos10 + acc_ctrl_y * sin10)
+    input.acc_y = -(acc_ctrl_x * cos10 + acc_ctrl_y * sin10)
 
-    vel_x += acc_x * time_diff
-    vel_y += acc_y * time_diff
-
-    #print(f'acc_ctrl_raw {acc_ctrl_raw_x:3}, {acc_ctrl_raw_y:3} | acc_ctrl {acc_ctrl_x:11}, {acc_ctrl_y:11} | vel {vel_x:11}, {vel_y:11}')
-    dx = vel_x * time_diff * px_per_m * physics_scale
-    dy = vel_y * time_diff * px_per_m * physics_scale
-
-    nx_tmp = pos_x + dx
-    ny_tmp = pos_y + dy
-
-    if nx_tmp < 0 or nx_tmp > 127:
-        vel_x *= -bounce_factor
-    if ny_tmp < 0 or ny_tmp > 159:
-        vel_y *= -bounce_factor
-
-    pos_x = max(min(nx_tmp, 127), 0)
-    pos_y = max(min(ny_tmp, 159), 0)
-
-    move_dot(int(pos_x), int(pos_y))
+    machine.update()
 
     # The time precision gets too low if we don't have any latency.
     time.sleep(0.05)
