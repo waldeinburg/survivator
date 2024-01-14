@@ -1,6 +1,13 @@
 import displayio
 
 from state import State
+from sprites import sprites
+import constants
+
+hero_width = 9
+hero_height = 9
+hero_max_x = constants.SCREEN_WIDTH - hero_width
+hero_max_y = constants.SCREEN_HEIGHT - hero_height
 
 # Screen width is 28 mm, resolution 128, i.e.:
 px_per_m = 4571
@@ -16,16 +23,20 @@ class PlayingState(State):
         return 'playing'
 
     def __init__(self):
-        self.color_bitmap = displayio.Bitmap(128, 160, 2)
-        color_palette = displayio.Palette(2)
-        color_palette[0] = 0x000000
-        color_palette[1] = 0x00FF00
-        sprite = displayio.TileGrid(self.color_bitmap, pixel_shader=color_palette, x=0, y=0)
-        self.group = displayio.Group()
-        self.group.append(sprite)
+        base_bitmap = displayio.Bitmap(constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT, 1)
+        base_palette = displayio.Palette(1)
+        base_tilegrid = displayio.TileGrid(base_bitmap, pixel_shader=base_palette)
+        self.hero_sprite = sprites['hero']
+        self.hero_group = displayio.Group()
+        self.hero_group.append(self.hero_sprite)
+        self.root_group = displayio.Group()
+        self.root_group.append(base_tilegrid)
+        self.root_group.append(self.hero_group)
 
     def enter(self, machine):
-        machine.display.show(self.group)
+        self.hero_group.x = int(machine.pos_x)
+        self.hero_group.y = int(machine.pos_y)
+        machine.display.show(self.root_group)
 
     def update(self, machine):
         input = machine.input
@@ -39,24 +50,14 @@ class PlayingState(State):
         nx_tmp = machine.pos_x + dx
         ny_tmp = machine.pos_y + dy
 
-        if nx_tmp < 0 or nx_tmp > 127:
+        if nx_tmp < 0 or nx_tmp > 128 - hero_width:
             machine.vel_x *= -bounce_factor
-        if ny_tmp < 0 or ny_tmp > 159:
+        if ny_tmp < 0 or ny_tmp > 160 - hero_height:
             machine.vel_y *= -bounce_factor
 
-        machine.pos_x = max(min(nx_tmp, 127), 0)
-        machine.pos_y = max(min(ny_tmp, 159), 0)
+        machine.pos_x = max(min(nx_tmp, hero_max_x), 0)
+        machine.pos_y = max(min(ny_tmp, hero_max_y), 0)
 
-        self.move_dot(machine)
-
-    def set_pixel(self, x, y, c):
-        self.color_bitmap[x, y] = c
-
-    def move_dot(self, machine):
-        self.set_pixel(machine.prev_x, machine.prev_y, 0)
-        x = int(machine.pos_x)
-        y = int(machine.pos_y)
-        self.set_pixel(x, y, 1)
+        self.hero_group.x = int(machine.pos_x)
+        self.hero_group.y = int(machine.pos_y)
         machine.display.refresh()
-        machine.prev_x = x
-        machine.prev_y = y

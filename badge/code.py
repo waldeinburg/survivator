@@ -15,6 +15,8 @@ from busio import UART
 
 from state import Input, StateMachine
 from playing_state import PlayingState
+import sprites
+import constants
 
 # Constants
 deg10 = math.radians(10)
@@ -51,12 +53,12 @@ display_bus = displayio.FourWire(spi, command=tft_dc, chip_select=tft_cs, reset=
 # unneccessary boilerblate as the displayio API supports this directly, except that it offers the
 # opportunity to light up the display after the CircuitPython logo display.
 # Setting upper left pixel shows that the first visible point is indeed 2x1. The usable area is still 128x160.
-display = ST7735R(display_bus, width=128, height=160, bgr=True,
+display = ST7735R(display_bus, width=constants.SCREEN_WIDTH, height=constants.SCREEN_HEIGHT, bgr=True,
     colstart=2, rowstart=1,
     backlight_pin=board.PWM0, brightness=0.5,
     auto_refresh=False)
 
-color_bitmap = displayio.Bitmap(128, 160, 2)
+color_bitmap = displayio.Bitmap(constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT, 2)
 color_palette = displayio.Palette(1)
 color_palette[0] = 0x000000
 bg_sprite = displayio.TileGrid(color_bitmap, pixel_shader=color_palette, x=0, y=0)
@@ -112,6 +114,7 @@ def got_pkg_begin():
         return False
     return b[0] == PKG_BEGIN
 
+sprites.load_all()
 input = Input()
 machine = StateMachine(display, input)
 machine.add_state(PlayingState())

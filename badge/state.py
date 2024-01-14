@@ -44,8 +44,6 @@ class StateMachine:
         self.pos_y = 80.0
         self.vel_x = 0.0
         self.vel_y = 0.0
-        self.prev_x = int(self.pos_x)
-        self.prev_y = int(self.pos_y)
 
     def add_state(self, state):
         self.states[state.name] = state
