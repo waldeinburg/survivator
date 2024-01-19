@@ -117,6 +117,7 @@ def got_pkg_begin():
 sprites.load_all()
 input = Input()
 machine = StateMachine(display, input)
+machine.reset_game_state()
 machine.add_state(PlayingState())
 machine.set_state('playing')
 

@@ -1,6 +1,7 @@
 # Design inspired by / stolen from https://learn.adafruit.com/circuitpython-101-state-machines
 import time
 
+
 class Input:
     def __init__(self):
         self.btn_a = False
@@ -35,7 +36,10 @@ class StateMachine:
         self.display = display
         self.input = input
 
+
+    def reset_game_state(self):
         # Timing
+        self.cur_time = time.monotonic()
         self.prev_time = time.monotonic()
         self.time_diff = 0.0
 
@@ -45,8 +49,16 @@ class StateMachine:
         self.vel_x = 0.0
         self.vel_y = 0.0
 
+        # Enemies
+        self.waiting_for_first_enemy = True
+        self.enemies = []
+        self.enemy_add_time = time.monotonic()
+        self.enemy_time_gap = 5
+
+
     def add_state(self, state):
         self.states[state.name] = state
+
 
     def set_state(self, name):
         if self.state:
@@ -54,8 +66,9 @@ class StateMachine:
         self.state = self.states[name]
         self.state.enter(self)
 
+
     def update(self):
-        cur_time = time.monotonic()
-        self.time_diff = cur_time - self.prev_time;
-        self.prev_time = cur_time
+        new_time = time.monotonic()
+        self.time_diff = new_time - self.cur_time;
+        self.cur_time = new_time
         self.state.update(self)

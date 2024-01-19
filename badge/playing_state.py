@@ -1,9 +1,13 @@
+import time
+
 import displayio
 
 from state import State
 from sprites import sprites
 import constants
 
+
+first_enemy_appear = 1
 hero_max_x = constants.SCREEN_WIDTH - constants.HERO_WIDTH
 hero_max_y = constants.SCREEN_HEIGHT - constants.HERO_HEIGHT
 sprite_tilt_acc = 0.7
@@ -21,6 +25,7 @@ class PlayingState(State):
     def name(self):
         return 'playing'
 
+
     def __init__(self):
         base_bitmap = displayio.Bitmap(constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT, 1)
         base_palette = displayio.Palette(1)
@@ -32,14 +37,20 @@ class PlayingState(State):
         self.root_group.append(base_tilegrid)
         self.root_group.append(self.hero_group)
 
+
     def enter(self, machine):
         self.hero_group.x = int(machine.pos_x)
         self.hero_group.y = int(machine.pos_y)
         machine.display.show(self.root_group)
 
+
     def update(self, machine):
         self.update_positition(machine)
         self.update_sprite(machine)
+        self.update_enemies(machine)
+        if machine.cur_time - machine.enemy_add_time >= \
+               (machine.enemy_time_gap if not machine.waiting_for_first_enemy else first_enemy_appear):
+            machine.enemies.append(self.get_random_enemy(machine))
         machine.display.refresh()
 
 
@@ -83,3 +94,11 @@ class PlayingState(State):
             y = 1
         i = 3 * y + x
         self.hero_sprite[0] = i
+
+
+    def get_random_enemy(self, machine):
+        pass
+
+
+    def update_enemies(self, machine):
+        pass
