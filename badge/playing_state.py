@@ -4,6 +4,7 @@ import displayio
 
 from state import State
 from sprites import sprites
+from beam_enemy import BeamEnemy
 import constants
 
 
@@ -27,14 +28,10 @@ class PlayingState(State):
 
 
     def __init__(self):
-        base_bitmap = displayio.Bitmap(constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT, 1)
-        base_palette = displayio.Palette(1)
-        base_tilegrid = displayio.TileGrid(base_bitmap, pixel_shader=base_palette)
         self.hero_sprite = sprites['hero']
         self.hero_group = displayio.Group()
         self.hero_group.append(self.hero_sprite)
         self.root_group = displayio.Group()
-        self.root_group.append(base_tilegrid)
         self.root_group.append(self.hero_group)
 
 
@@ -48,9 +45,7 @@ class PlayingState(State):
         self.update_positition(machine)
         self.update_sprite(machine)
         self.update_enemies(machine)
-        if machine.cur_time - machine.enemy_add_time >= \
-               (machine.enemy_time_gap if not machine.waiting_for_first_enemy else first_enemy_appear):
-            machine.enemies.append(self.get_random_enemy(machine))
+        self.maybe_add_enemy(machine)
         machine.display.refresh()
 
 
@@ -96,9 +91,20 @@ class PlayingState(State):
         self.hero_sprite[0] = i
 
 
+    def maybe_add_enemy(self, machine):
+        if machine.cur_time - machine.enemy_add_time >= \
+               (machine.enemy_time_gap if not machine.waiting_for_first_enemy else first_enemy_appear):
+            machine.waiting_for_first_enemy = False
+            machine.enemy_add_time = time.monotonic()
+            enemy = self.get_random_enemy(machine)
+            machine.enemies.append(enemy)
+            self.root_group.append(enemy.group)
+
+
     def get_random_enemy(self, machine):
-        pass
+        return BeamEnemy(machine)
 
 
     def update_enemies(self, machine):
-        pass
+        for enemy in machine.enemies:
+            enemy.update(machine)
