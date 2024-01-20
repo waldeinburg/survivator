@@ -1,11 +1,13 @@
 import displayio
+import adafruit_imageload
+
 import constants
 
 def load_sprite(name, width, height, tile_width, tile_height, default_tile, transparency=True):
-    bitmap = displayio.OnDiskBitmap('/assets/' + name + '.bmp')
+    bitmap, palette = adafruit_imageload.load('/assets/' + name + '.bmp')
     if transparency:
-        bitmap.pixel_shader.make_transparent(0)
-    sprite = displayio.TileGrid(bitmap, pixel_shader=bitmap.pixel_shader,
+        palette.make_transparent(0)
+    sprite = displayio.TileGrid(bitmap, pixel_shader=palette,
         width=1, height=1, tile_width=constants.HERO_WIDTH, tile_height=constants.HERO_HEIGHT,
         default_tile=4)
     return sprite
