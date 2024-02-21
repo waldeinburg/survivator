@@ -13,8 +13,6 @@ hero_max_x = constants.SCREEN_WIDTH - constants.HERO_WIDTH
 hero_max_y = constants.SCREEN_HEIGHT - constants.HERO_HEIGHT
 sprite_tilt_acc = 0.7
 
-# Screen width is 28 mm, resolution 128, i.e.:
-px_per_m = 4571
 # Factor based on feeling. Is this really some crude application of intertia physics?
 # TODO: Brush up 20+ year old physics/math and do this properly. It could improve the feeling of the steering.`
 physics_scale = 0.01
@@ -55,8 +53,8 @@ class PlayingState(State):
         machine.vel_x += input.acc_x * time_diff * physics_scale
         machine.vel_y += input.acc_y * time_diff * physics_scale
 
-        dx = machine.vel_x * time_diff * px_per_m
-        dy = machine.vel_y * time_diff * px_per_m
+        dx = machine.vel_x * time_diff * constants.PX_PER_M
+        dy = machine.vel_y * time_diff * constants.PX_PER_M
 
         nx_tmp = machine.pos_x + dx
         ny_tmp = machine.pos_y + dy
