@@ -10,6 +10,7 @@ from util import get_random_pos_opposite_hero, get_hero_center
 
 max_x = constants.SCREEN_WIDTH - 1
 max_y = constants.SCREEN_HEIGHT - 1
+radius = constants.HERO_SIZE / 2
 
 class BeamEnemy(Enemy):
 
@@ -18,20 +19,21 @@ class BeamEnemy(Enemy):
         self.speed = 100
         self.color = 0x00FF00
         self.fading = False
+        self.active = True
 
         self.start_x, self.start_y = get_random_pos_opposite_hero(machine)
         self.cur_x = self.start_x
         self.cur_y = self.start_y
-        aim_x, aim_y = get_hero_center(machine)
+        self.aim_x, self.aim_y = get_hero_center(machine)
         # Calculate velocity x and y based on angle of speed vector.
         # Because we aim for the center, the diff will never be 0.
-        dx = aim_x - self.start_x
-        dy = aim_y - self.start_y
-        a = math.atan(dy / dx)
-        dir_x = 1 if dx > 0 else -1
-        dir_y = 1 if dx > 0 else -1
-        self.vel_x = self.speed * math.cos(a) * dir_x
-        self.vel_y = self.speed * math.sin(a) * dir_y
+        dx = self.aim_x - self.start_x
+        dy = self.aim_y - self.start_y
+        self.angle = math.atan(dy / dx)
+        self.dir_x = 1 if dx > 0 else -1
+        self.dir_y = 1 if dx > 0 else -1
+        self.vel_x = self.speed * math.cos(self.angle) * self.dir_x
+        self.vel_y = self.speed * math.sin(self.angle) * self.dir_y
 
 
     def update(self, machine):
@@ -41,6 +43,8 @@ class BeamEnemy(Enemy):
                 if len(self.group) > 0:
                     i = randrange(0, len(self.group))
                     del self.group[i]
+            if len(self.group) == 0:
+                self.active = False
             return
 
         dx = self.vel_x * machine.time_diff
@@ -55,3 +59,35 @@ class BeamEnemy(Enemy):
             self.group.append(Line(int(self.cur_x), int(self.cur_y), int(new_cur_x), int(new_cur_y), self.color))
         self.cur_x = new_cur_x
         self.cur_y = new_cur_y
+
+    def is_active(self, machine):
+        return self.active
+
+    def has_hit(self, machine):
+        lx = self.cur_x
+        ly = self.cur_y
+        px, py = get_hero_center(machine)
+        dx = lx - px
+        dy = ly - py
+        a = self.angle
+
+        # Has tip hit?
+        point_distance = math.sqrt(dx**2 + dy**2)
+        if point_distance <= radius:
+            print('point', lx, ly, px, py, a)
+            return True
+        # Has line passed?
+        ldx = lx - self.start_x
+        ldy = ly - self.start_y
+        dir_ldx = 1 if ldx > 0 else -1
+        dir_dx = 1 if dx > 0 else -1
+        dir_ldy = 1 if ldy > 0 else -1
+        dir_dy = 1 if dy > 0 else -1
+
+        if dir_ldx + dir_dx == 0 or dir_ldy + dir_dy == 0:
+            return False
+        # Does line hit?
+        line_distance = abs(math.cos(a) * dx - math.sin(a) * dy)
+        if line_distance <= radius:
+            print('line', lx, ly, px, py, a)
+        return line_distance <= radius

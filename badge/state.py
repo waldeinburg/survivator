@@ -49,6 +49,8 @@ class StateMachine:
         self.vel_x = 0.0
         self.vel_y = 0.0
 
+        self.is_hit = False
+
         # Enemies
         self.waiting_for_first_enemy = True
         self.enemies = []

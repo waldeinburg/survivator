@@ -40,10 +40,28 @@ class PlayingState(State):
 
 
     def update(self, machine):
-        self.update_positition(machine)
-        self.update_sprite(machine)
-        self.update_enemies(machine)
-        self.maybe_add_enemy(machine)
+        if not machine.is_hit:
+            i = 0
+            while i < len(machine.enemies):
+                if machine.enemies[i].is_active(machine):
+                    i += 1
+                    continue
+                # Remove and continue to next by not incrementing i
+                enemy = machine.enemies.pop(i)
+                self.root_group.remove(enemy.group)
+
+            for enemy in machine.enemies:
+                if enemy.has_hit(machine):
+                    machine.is_hit = True
+                    break
+
+        if machine.is_hit:
+            pass
+        else:
+            self.update_positition(machine)
+            self.update_sprite(machine)
+            self.update_enemies(machine)
+            self.maybe_add_enemy(machine)
         machine.display.refresh()
 
 
