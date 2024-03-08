@@ -8,7 +8,7 @@ def load_sprite(name, width, height, tile_width, tile_height, default_tile, tran
     if transparency:
         palette.make_transparent(0)
     sprite = displayio.TileGrid(bitmap, pixel_shader=palette,
-        width=1, height=1, tile_width=constants.HERO_WIDTH, tile_height=constants.HERO_HEIGHT,
+        width=1, height=1, tile_width=tile_width, tile_height=tile_height,
         default_tile=4)
     return sprite
 
