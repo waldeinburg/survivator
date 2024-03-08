@@ -74,7 +74,6 @@ class BeamEnemy(Enemy):
         # Has tip hit?
         point_distance = math.sqrt(dx**2 + dy**2)
         if point_distance <= radius:
-            print('point', lx, ly, px, py, a)
             return True
         # Has line passed?
         ldx = lx - self.start_x
@@ -84,10 +83,8 @@ class BeamEnemy(Enemy):
         dir_ldy = 1 if ldy > 0 else -1
         dir_dy = 1 if dy > 0 else -1
 
-        if dir_ldx + dir_dx == 0 or dir_ldy + dir_dy == 0:
+        if ldx == 0 or ldy == 0 or dir_ldx + dir_dx == 0 or dir_ldy + dir_dy == 0:
             return False
         # Does line hit?
-        line_distance = abs(math.cos(a) * dx - math.sin(a) * dy)
-        if line_distance <= radius:
-            print('line', lx, ly, px, py, a)
+        line_distance = abs(math.cos(a) * dy - math.sin(a) * dx)
         return line_distance <= radius
