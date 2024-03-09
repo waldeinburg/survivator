@@ -21,3 +21,8 @@ def load_all():
         width=1, height=1,
         tile_width=constants.HERO_WIDTH, tile_height=constants.HERO_HEIGHT,
         default_tile=4)
+    sprites['hero-explode'] = load_sprite(
+        'hero-explode',
+        width=1, height=1,
+        tile_width=constants.HERO_EXPLODE_WIDTH, tile_height=constants.HERO_EXPLODE_HEIGHT,
+        default_tile=0)

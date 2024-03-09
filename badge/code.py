@@ -15,6 +15,7 @@ from busio import UART
 
 from state import Input, StateMachine
 from playing_state import PlayingState
+from game_over_state import GameOverState
 import sprites
 import constants
 
@@ -119,6 +120,7 @@ input = Input()
 machine = StateMachine(display, input)
 machine.reset_game_state()
 machine.add_state(PlayingState())
+machine.add_state(GameOverState())
 machine.set_state('playing')
 
 while True:

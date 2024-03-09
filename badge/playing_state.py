@@ -29,14 +29,14 @@ class PlayingState(State):
         self.hero_sprite = sprites['hero']
         self.hero_group = displayio.Group()
         self.hero_group.append(self.hero_sprite)
-        self.root_group = displayio.Group()
-        self.root_group.append(self.hero_group)
 
 
     def enter(self, machine):
         self.hero_group.x = int(machine.pos_x)
         self.hero_group.y = int(machine.pos_y)
-        machine.display.show(self.root_group)
+        machine.play_root_group = displayio.Group()
+        machine.play_root_group.append(self.hero_group)
+        machine.display.show(machine.play_root_group)
 
 
     def update(self, machine):
@@ -48,21 +48,22 @@ class PlayingState(State):
                     continue
                 # Remove and continue to next by not incrementing i
                 enemy = machine.enemies.pop(i)
-                self.root_group.remove(enemy.group)
+                machine.play_root_group.remove(enemy.group)
 
             for enemy in machine.enemies:
                 if enemy.has_hit(machine):
                     machine.is_hit = True
                     break
 
-        if machine.is_hit:
-            pass
-        else:
+        if not machine.is_hit:
             self.update_positition(machine)
             self.update_sprite(machine)
             self.update_enemies(machine)
             self.maybe_add_enemy(machine)
         machine.display.refresh()
+        if machine.is_hit:
+            machine.play_root_group.remove(self.hero_group)
+            machine.set_state('game-over')
 
 
     def update_positition(self, machine):
@@ -114,7 +115,7 @@ class PlayingState(State):
             machine.enemy_add_time = time.monotonic()
             enemy = self.get_random_enemy(machine)
             machine.enemies.append(enemy)
-            self.root_group.append(enemy.group)
+            machine.play_root_group.append(enemy.group)
 
 
     def get_random_enemy(self, machine):
