@@ -7,7 +7,8 @@ wait_time = 0.3
 warning_blink_on_time = 0.05
 warning_blink_off_time = 0.01
 warning_size = 1
-warning_color = 0xE0E0E0
+warning_color = 0xFFFF00
+
 
 class Enemy:
 

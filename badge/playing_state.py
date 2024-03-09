@@ -18,6 +18,12 @@ sprite_tilt_acc = 0.7
 physics_scale = 0.01
 # Based on feeling
 bounce_factor = 0.31
+# 0.1 and a start gap of 5 seconds would give 50 enemies before the gap reaches 0 and the screen is flooded.
+# This means an absolute max playing time of (2*5 + (5/0.1 - 1)*-0.1) / 2* 5/0.1 = 127.5 seconds.
+# A value of 0.01 means a max playing time of almost 21 minutes which gives reasonable space for beating a
+# highscore by more than just fractions of seconds.
+# A value of 0.5 gives 27.5 seconds before the flood.
+enemy_time_gap_shrink = 0.01
 
 class PlayingState(State):
     @property
@@ -117,6 +123,7 @@ class PlayingState(State):
         if machine.cur_time - machine.enemy_add_time < \
                (machine.enemy_time_gap if not machine.waiting_for_first_enemy else first_enemy_appear):
             return
+        machine.enemy_time_gap = max(machine.enemy_time_gap - enemy_time_gap_shrink, 0)
         machine.waiting_for_first_enemy = False
         machine.enemy_add_time = time.monotonic()
         enemy = self.get_random_enemy(machine)
