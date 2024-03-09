@@ -6,7 +6,7 @@ from state import State
 from sprites import sprites
 from beam_enemy import BeamEnemy
 import constants
-
+from util import get_random_side_pos
 
 first_enemy_appear = 1
 hero_max_x = constants.SCREEN_WIDTH - constants.HERO_WIDTH
@@ -35,6 +35,8 @@ class PlayingState(State):
         self.hero_group.x = int(machine.pos_x)
         self.hero_group.y = int(machine.pos_y)
         machine.play_root_group = displayio.Group()
+        machine.enemy_warning_group = displayio.Group()
+        machine.play_root_group.append(machine.enemy_warning_group)
         machine.play_root_group.append(self.hero_group)
         machine.display.show(machine.play_root_group)
 
@@ -112,17 +114,19 @@ class PlayingState(State):
 
 
     def maybe_add_enemy(self, machine):
-        if machine.cur_time - machine.enemy_add_time >= \
+        if machine.cur_time - machine.enemy_add_time < \
                (machine.enemy_time_gap if not machine.waiting_for_first_enemy else first_enemy_appear):
-            machine.waiting_for_first_enemy = False
-            machine.enemy_add_time = time.monotonic()
-            enemy = self.get_random_enemy(machine)
-            machine.enemies.append(enemy)
-            machine.play_root_group.append(enemy.group)
+            return
+        machine.waiting_for_first_enemy = False
+        machine.enemy_add_time = time.monotonic()
+        enemy = self.get_random_enemy(machine)
+        machine.enemies.append(enemy)
+        machine.play_root_group.append(enemy.group)
 
 
     def get_random_enemy(self, machine):
-        return BeamEnemy(machine)
+        side, x, y = get_random_side_pos()
+        return BeamEnemy(side, x, y, machine)
 
 
     def update_enemies(self, machine):

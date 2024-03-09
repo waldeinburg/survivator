@@ -6,7 +6,7 @@ from adafruit_display_shapes.line import Line
 
 from enemy import Enemy
 import constants
-from util import get_random_pos_opposite_hero, get_hero_center
+from util import get_hero_center
 
 max_x = constants.SCREEN_WIDTH - 1
 max_y = constants.SCREEN_HEIGHT - 1
@@ -14,14 +14,13 @@ radius = constants.HERO_SIZE / 2
 
 class BeamEnemy(Enemy):
 
-    def __init__(self, machine):
-        super().__init__()
+    def __init__(self, side, start_x, start_y, machine):
+        super().__init__(side, start_x, start_y, machine)
         self.speed = 100
         self.color = 0x00FF00
         self.fading = False
         self.active = True
 
-        self.start_x, self.start_y = get_random_pos_opposite_hero(machine)
         self.cur_x = self.start_x
         self.cur_y = self.start_y
         self.aim_x, self.aim_y = get_hero_center(machine)
@@ -36,7 +35,7 @@ class BeamEnemy(Enemy):
         self.vel_y = self.speed * math.sin(self.angle) * self.dir_y
 
 
-    def update(self, machine):
+    def update_enemy(self, machine):
         if self.fading:
             # Dissolve the line by deleting random parts.
             for i in range(10):
@@ -60,8 +59,6 @@ class BeamEnemy(Enemy):
         self.cur_x = new_cur_x
         self.cur_y = new_cur_y
 
-    def is_active(self, machine):
-        return self.active
 
     def has_hit(self, machine):
         lx = self.cur_x
