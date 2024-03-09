@@ -26,8 +26,17 @@ class GameOverState(State):
         machine.hero_explode_last_update = machine.cur_time
 
 
+    def exit(self, machine):
+        if machine.hero_explode_sprite_idx is not None:
+            machine.play_root_group.remove(self.hero_explode_group)
+
+
     def update(self, machine):
         self.update_sprite(machine)
+        if machine.input.btn_mb:
+            machine.reset_game_state()
+            machine.set_state('playing')
+            return
         self.update_enemies(machine)
         machine.display.refresh()
 

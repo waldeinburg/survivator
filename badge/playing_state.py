@@ -39,6 +39,10 @@ class PlayingState(State):
         machine.display.show(machine.play_root_group)
 
 
+    def exit(self, machine):
+        machine.play_root_group.remove(self.hero_group)
+
+
     def update(self, machine):
         if not machine.is_hit:
             i = 0
@@ -62,7 +66,6 @@ class PlayingState(State):
             self.maybe_add_enemy(machine)
         machine.display.refresh()
         if machine.is_hit:
-            machine.play_root_group.remove(self.hero_group)
             machine.set_state('game-over')
 
 
