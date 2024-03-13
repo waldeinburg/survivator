@@ -1,5 +1,5 @@
 # Design inspired by / stolen from https://learn.adafruit.com/circuitpython-101-state-machines
-import time
+from util import now, time_diff
 
 
 class Input:
@@ -39,8 +39,9 @@ class StateMachine:
 
     def reset_game_state(self):
         # Timing
-        self.cur_time = time.monotonic()
-        self.prev_time = time.monotonic()
+        self.cur_time = now()
+        self.prev_time = self.cur_time
+        self.start_time = self.cur_time
         self.time_diff = 0.0
 
         # Game
@@ -54,7 +55,7 @@ class StateMachine:
         # Enemies
         self.waiting_for_first_enemy = True
         self.enemies = []
-        self.enemy_add_time = time.monotonic()
+        self.enemy_add_time = now()
         self.enemy_time_gap = 5
 
 
@@ -70,7 +71,7 @@ class StateMachine:
 
 
     def update(self):
-        new_time = time.monotonic()
-        self.time_diff = new_time - self.cur_time;
+        new_time = now()
+        self.time_diff = time_diff(self.cur_time, new_time);
         self.cur_time = new_time
         self.state.update(self)

@@ -1,12 +1,10 @@
-import time
-
 import displayio
 
 from state import State
 from sprites import sprites
 from beam_enemy import BeamEnemy
 import constants
-from util import get_random_side_pos
+from util import get_random_side_pos, now, time_diff
 
 first_enemy_appear = 1
 hero_max_x = constants.SCREEN_WIDTH - constants.HERO_WIDTH
@@ -120,12 +118,12 @@ class PlayingState(State):
 
 
     def maybe_add_enemy(self, machine):
-        if machine.cur_time - machine.enemy_add_time < \
+        if time_diff(machine.enemy_add_time, machine.cur_time) < \
                (machine.enemy_time_gap if not machine.waiting_for_first_enemy else first_enemy_appear):
             return
         machine.enemy_time_gap = max(machine.enemy_time_gap - enemy_time_gap_shrink, 0)
         machine.waiting_for_first_enemy = False
-        machine.enemy_add_time = time.monotonic()
+        machine.enemy_add_time = now()
         enemy = self.get_random_enemy(machine)
         machine.enemies.append(enemy)
         machine.play_root_group.append(enemy.group)

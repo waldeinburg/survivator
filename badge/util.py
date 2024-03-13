@@ -1,5 +1,6 @@
 import math
 from random import randrange, choice
+import time
 
 import constants
 
@@ -69,3 +70,12 @@ def get_hero_center(machine):
         machine.pos_x + HERO_MIDDLE_X,
         machine.pos_y + HERO_MIDDLE_Y
     )
+
+
+# Time functions. Always use these so that we can shift from time.monotonic to supervisor.ticks_ms to be able to run precisely after 1 hour.
+def now():
+    return time.monotonic()
+
+
+def time_diff(a, b):
+    return b - a
