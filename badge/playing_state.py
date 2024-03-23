@@ -1,4 +1,7 @@
 import displayio
+from adafruit_display_text import label
+from vectorio import Rectangle
+import terminalio
 
 from state import State
 from sprites import sprites
@@ -7,8 +10,8 @@ import constants
 from util import get_random_side_pos, now, time_diff
 
 first_enemy_appear = 1
-hero_max_x = constants.SCREEN_WIDTH - constants.HERO_WIDTH
-hero_max_y = constants.SCREEN_HEIGHT - constants.HERO_HEIGHT
+hero_max_x = constants.PLAY_WIDTH - constants.HERO_WIDTH
+hero_max_y = constants.PLAY_HEIGHT - constants.HERO_HEIGHT
 sprite_tilt_acc = 0.7
 
 # Factor based on feeling. Is this really some crude application of intertia physics?
@@ -38,15 +41,37 @@ class PlayingState(State):
     def enter(self, machine):
         self.hero_group.x = int(machine.pos_x)
         self.hero_group.y = int(machine.pos_y)
+
         machine.play_root_group = displayio.Group()
+
+        machine.play_info_group = displayio.Group()
+
+        info_bg_palette = displayio.Palette(1)
+        info_bg_palette[0] = 0x303050
+        info_bg = Rectangle(x=0, y=0, width=constants.SCREEN_WIDTH, height=constants.INFO_HEIGHT, pixel_shader=info_bg_palette)
+        machine.play_info_group.append(info_bg)
+
+        high_text = label.Label(terminalio.FONT, color=0xA0A0A0, anchor_point=(0.0, 1.0), anchored_position=(1, constants.INFO_HEIGHT))
+        high_text.text = "00:00.000"
+        machine.play_info_group.append(high_text)
+        score_text = label.Label(terminalio.FONT, color=0xFF0000, anchor_point=(1.0, 1.0), anchored_position=(constants.SCREEN_WIDTH - 1, constants.INFO_HEIGHT))
+        score_text.text = "00:00.000"
+        machine.play_info_group.append(score_text)
+
+        machine.play_root_group.append(machine.play_info_group)
+
+
+        machine.play_area_group = displayio.Group(y=constants.INFO_HEIGHT)
         machine.enemy_warning_group = displayio.Group()
-        machine.play_root_group.append(machine.enemy_warning_group)
-        machine.play_root_group.append(self.hero_group)
+        machine.play_area_group.append(machine.enemy_warning_group)
+        machine.play_area_group.append(self.hero_group)
+        machine.play_root_group.append(machine.play_area_group)
+
         machine.display.show(machine.play_root_group)
 
 
     def exit(self, machine):
-        machine.play_root_group.remove(self.hero_group)
+        machine.play_area_group.remove(self.hero_group)
 
 
     def update(self, machine):
@@ -58,7 +83,7 @@ class PlayingState(State):
                     continue
                 # Remove and continue to next by not incrementing i
                 enemy = machine.enemies.pop(i)
-                machine.play_root_group.remove(enemy.group)
+                machine.play_area_group.remove(enemy.group)
 
             for enemy in machine.enemies:
                 if enemy.has_hit(machine):
@@ -126,7 +151,7 @@ class PlayingState(State):
         machine.enemy_add_time = now()
         enemy = self.get_random_enemy(machine)
         machine.enemies.append(enemy)
-        machine.play_root_group.append(enemy.group)
+        machine.play_area_group.append(enemy.group)
 
 
     def get_random_enemy(self, machine):

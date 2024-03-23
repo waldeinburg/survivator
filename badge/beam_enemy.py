@@ -8,8 +8,8 @@ from enemy import Enemy
 import constants
 from util import get_hero_center
 
-max_x = constants.SCREEN_WIDTH - 1
-max_y = constants.SCREEN_HEIGHT - 1
+max_x = constants.PLAY_WIDTH - 1
+max_y = constants.PLAY_HEIGHT - 1
 radius = constants.HERO_SIZE / 2
 
 class BeamEnemy(Enemy):

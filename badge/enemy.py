@@ -24,20 +24,20 @@ class Enemy:
         self.warning = displayio.Group()
         if side == 'LEFT' or side == 'RIGHT':
             w_width = warning_size
-            w_height = constants.SCREEN_HEIGHT
+            w_height = constants.PLAY_HEIGHT
             w_y = 0
             if side == 'LEFT':
                 w_x = 0
             else:
-                w_x = constants.SCREEN_WIDTH - warning_size
+                w_x = constants.PLAY_WIDTH - warning_size
         else:
-            w_width = constants.SCREEN_WIDTH
+            w_width = constants.PLAY_WIDTH
             w_height = warning_size
             w_x = 0
             if side == 'UP':
                 w_y = 0
             else:
-                w_y = constants.SCREEN_HEIGHT - warning_size
+                w_y = constants.PLAY_HEIGHT - warning_size
         self.warning.x = w_x
         self.warning.y = w_y
         self.warning.append(Rect(0, 0, w_width, w_height, fill=warning_color))

@@ -35,22 +35,22 @@ def get_random_pos_opposite_hero(machine):
     x_or_y = randrange(0, 2)
     if x_or_y == 0:
         return (
-            _get_random_pos(machine.pos_x, constants.SCREEN_WIDTH),
-            _get_opposite_pos(machine.pos_y, constants.SCREEN_HEIGHT)
+            _get_random_pos(machine.pos_x, constants.PLAY_WIDTH),
+            _get_opposite_pos(machine.pos_y, constants.PLAY_HEIGHT)
         )
     else:
         return (
-            _get_opposite_pos(machine.pos_x, constants.SCREEN_WIDTH),
-            _get_random_pos(machine.pos_y, constants.SCREEN_HEIGHT)
+            _get_opposite_pos(machine.pos_x, constants.PLAY_WIDTH),
+            _get_random_pos(machine.pos_y, constants.PLAY_HEIGHT)
         )
 
 
 def _get_random_x():
-    return randrange(0, constants.SCREEN_WIDTH)
+    return randrange(0, constants.PLAY_WIDTH)
 
 
 def _get_random_y():
-    return randrange(0, constants.SCREEN_HEIGHT)
+    return randrange(0, constants.PLAY_HEIGHT)
 
 
 def get_random_side_pos():
@@ -58,11 +58,11 @@ def get_random_side_pos():
     if side is LEFT:
         return side, 0, _get_random_y()
     if side is RIGHT:
-        return side, constants.SCREEN_WIDTH - 1, _get_random_y()
+        return side, constants.PLAY_WIDTH - 1, _get_random_y()
     if side is UP:
         return side, _get_random_x(), 0
     if side is DOWN:
-        return side, _get_random_x(), constants.SCREEN_HEIGHT - 1
+        return side, _get_random_x(), constants.PLAY_HEIGHT - 1
 
 
 def get_hero_center(machine):

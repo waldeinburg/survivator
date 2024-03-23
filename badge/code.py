@@ -59,7 +59,7 @@ display = ST7735R(display_bus, width=constants.SCREEN_WIDTH, height=constants.SC
     backlight_pin=board.PWM0, brightness=0.5,
     auto_refresh=False)
 
-color_bitmap = displayio.Bitmap(constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT, 2)
+color_bitmap = displayio.Bitmap(constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT, 1)
 color_palette = displayio.Palette(1)
 color_palette[0] = 0x000000
 bg_sprite = displayio.TileGrid(color_bitmap, pixel_shader=color_palette, x=0, y=0)
@@ -93,7 +93,7 @@ while uart.read(1) != SYN:
     if timeout > 0:
         timeout -= 1
         if timeout == 0:
-            info_group = displayio.Group(scale=1, x=8, y=30)
+            info_group = displayio.Group(x=8, y=30)
             info_area = label.Label(terminalio.FONT, text="Press reset on\nMicrobit", color=0xFF0000)
             info_group.append(info_area)
             splash.append(info_group)
