@@ -7,7 +7,7 @@ from state import State
 from sprites import sprites
 from beam_enemy import BeamEnemy
 import constants
-from util import get_random_side_pos, now, time_diff
+from util import get_random_side_pos, now, time_diff, format_time
 
 first_enemy_appear = 1
 hero_max_x = constants.PLAY_WIDTH - constants.HERO_WIDTH
@@ -52,10 +52,10 @@ class PlayingState(State):
         machine.play_info_group.append(info_bg)
 
         high_text = label.Label(terminalio.FONT, color=0xA0A0A0, anchor_point=(0.0, 1.0), anchored_position=(1, constants.INFO_HEIGHT))
-        high_text.text = "00:00.000"
+        high_text.text = format_time(machine.highscore)
         machine.play_info_group.append(high_text)
         score_text = label.Label(terminalio.FONT, color=0xFF0000, anchor_point=(1.0, 1.0), anchored_position=(constants.SCREEN_WIDTH - 1, constants.INFO_HEIGHT))
-        score_text.text = "00:00.000"
+        score_text.text = format_time(0.0)
         machine.play_info_group.append(score_text)
 
         machine.play_root_group.append(machine.play_info_group)

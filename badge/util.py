@@ -79,3 +79,36 @@ def now():
 
 def time_diff(a, b):
     return b - a
+
+
+def format_time(time):
+    '''
+    Format time only with necessary parts.
+    '''
+    # The system has some bad floating point handling (int(4.123 * 1000) == 4122).
+    # We could get the digits from str(time) but it would be slower and we will loose the precision while
+    # converting from float to int while saving anyway.
+    # TODO: read/write highscore as string instead of milliseconds int.
+    res = ''
+    sec = int(time)
+    h = sec // 3600
+    hr = sec % 3600
+    m = hr // 60
+    s = hr % 60
+    if h > 0:
+        res = str(h) + ':'
+        if m < 10:
+            res += '0'
+    if m > 0 or h > 0:
+        res += str(m) + ':'
+        if s < 10:
+            res += '0'
+
+    ms = int((time - sec) * 1000)
+    ms100 = int(ms / 100)
+    ms10 = int((ms - ms100 * 100) / 10)
+    ms1 = ms - ms10 * 10 - ms100 * 100
+
+    res += str(s) + '.' + str(ms100) + str(ms10) + str(ms1)
+
+    return res

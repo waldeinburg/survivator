@@ -1,5 +1,7 @@
 # Design inspired by / stolen from https://learn.adafruit.com/circuitpython-101-state-machines
 from util import now, time_diff
+import constants
+import microbit
 
 
 class Input:
@@ -35,6 +37,9 @@ class StateMachine:
         self.states = {}
         self.display = display
         self.input = input
+        # The badge has a read only file system while we can save the highscore on the micro:bit.
+        self.highscore = microbit.get_highscore()
+        print('highscore', self.highscore)
 
 
     def reset_game_state(self):

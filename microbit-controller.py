@@ -2,33 +2,22 @@ from microbit import *
 import utime
 import math
 
-
-def now():
-    return utime.ticks_us()
-
+HIGHSCORE_FILENAME='highscore'
 
 SYN = bytes([0])
 ACK = bytes([0])
 SYN_ACK = bytes([1])
+OK = 0x0
 PKG_BEGIN = 0xBE
 PKG_END = 0xEF
+READY_FOR_INPUT = bytes([0])
+GET_HIGHSCORE = bytes([1])
+PUT_HIGHSCORE = bytes([2])
+HIGHSCORE_SIZE = 4
+HIGHSCORE_ORDER = 'big'
+
 A_BIT = 1
 B_BIT = 2
-# A delay reasonable for a relatively continous display after passing 1 min.
-TIMER_SCROLL_DELAY = 180
-
-TIMER_START = bytes([1])
-TIMER_STOP = bytes([2])
-TIMER_RESET = bytes([3])
-TIMER_SHOW = bytes([4])
-TIMER_HIDE = bytes([5])
-
-timer_running = False
-timer_tick = now()
-timer_duration = 0
-timer_duration_part_us = 0
-timer_visible = False
-timer_next_display = 0
 
 
 def acc_byte(v):
@@ -54,35 +43,13 @@ def send_input_state():
                       acc_y,
                       PKG_END]))
 
-
-def format_seconds(sec):
-    res = ''
-    h = sec // 3600
-    hr = sec % 3600
-    m = hr // 60
-    s = hr % 60
-    if h > 0:
-        res = str(h) + ':'
-        if m < 10:
-            res += '0'
-    if m > 0 or h > 0:
-        res += str(m) + ':'
-        if s < 10:
-            res += '0'
-    res += str(s)
-    return res
-
-
-def scroll_time():
-    display.scroll(format_seconds(timer_duration),
-                   delay=TIMER_SCROLL_DELAY,
-                   loop=True,
-                   wait=False)
-
-def clear_scroll():
-    # clear() does not stop scroll.
-    display.scroll('')
-
+highscore = 0
+try:
+    with open(HIGHSCORE_FILENAME, 'r') as f:
+        highscore = int(f.read())
+except OSError:
+    with open(HIGHSCORE_FILENAME, 'w') as f:
+        f.write('0')
 
 uart.init(tx=pin1, rx=pin2)
 
@@ -94,7 +61,7 @@ while uart.read(1) != ACK:
         warn_timeout -= 1
         if warn_timeout == 0:
             display.show('*', wait=False)
-    
+
 uart.write(SYN_ACK)
 
 # Ready!
@@ -103,40 +70,13 @@ display.scroll("Survivator", wait=False)
 
 while True:
     v = uart.read(1)
-    if v == ACK:
+    if v == READY_FOR_INPUT:
         send_input_state()
-    elif v == TIMER_START:
-        timer_running = True
-        timer_tick = now()
-    elif v == TIMER_STOP:
-        timer_running = False
-        if timer_visible:
-            scroll_time()
-    elif v == TIMER_RESET:
-        timer_duration = 0
-        timer_duration_part_us = 0
-        timer_next_display = 0
-        timer_tick = now()
-    elif v == TIMER_SHOW:
-        timer_visible = True
-        timer_next_display = timer_duration
-        clear_scroll()
-        if not timer_running:
-            scroll_time()
-    elif v == TIMER_HIDE:
-        timer_visible = False
-        clear_scroll()
-        
-    if timer_running:
-        n = now()
-        diff = timer_duration_part_us + utime.ticks_diff(n, timer_tick)
-        if diff >= 1_000_000:
-            timer_tick = n
-            timer_duration += diff // 1_000_000
-            timer_duration_part_us = diff % 1_000_000
-            if timer_visible and timer_duration >= timer_next_display:
-                # Approx. 1 sec. per character.
-                timer_str = format_seconds(timer_duration)
-                timer_next_display = timer_duration + len(timer_str)
-                display.scroll(timer_str, delay=TIMER_SCROLL_DELAY, loop=False, wait=False)
-
+    elif v == GET_HIGHSCORE:
+        begin = bytes([PKG_BEGIN])
+        data = highscore.to_bytes(HIGHSCORE_SIZE, HIGHSCORE_ORDER)
+        end = bytes([PKG_END])
+        uart.write(begin + data + end)
+    elif v == PUT_HIGHSCORE:
+        # TODO
+        uart.write(bytes(OK))

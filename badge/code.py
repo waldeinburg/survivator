@@ -5,25 +5,26 @@ import os
 import time
 
 import board
-import terminalio
 import displayio
 import digitalio
 import pwmio
-from adafruit_display_text import label
 from adafruit_st7735r import ST7735R
-from busio import UART
 
 from state import Input, StateMachine
 from playing_state import PlayingState
 from game_over_state import GameOverState
 import sprites
 import constants
+import microbit
 
 # Constants
 deg10 = math.radians(10)
 cos10 = math.cos(deg10)
 sin10 = math.sin(deg10)
 gravity_acc = 9.81
+
+A_BIT = 1
+B_BIT = 2
 
 # Pull down does not work. I.e. False means pressed.
 BTN_A = digitalio.DigitalInOut(board.BTN_A)
@@ -59,61 +60,17 @@ display = ST7735R(display_bus, width=constants.SCREEN_WIDTH, height=constants.SC
     backlight_pin=board.PWM0, brightness=0.5,
     auto_refresh=False)
 
+microbit.init(display)
+
 color_bitmap = displayio.Bitmap(constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT, 1)
 color_palette = displayio.Palette(1)
-color_palette[0] = 0x000000
+color_palette[0] = 0x505050
 bg_sprite = displayio.TileGrid(color_bitmap, pixel_shader=color_palette, x=0, y=0)
 splash = displayio.Group()
 splash.append(bg_sprite)
 display.show(splash)
+display.refresh()
 
-SYN = bytes([0])
-ACK = bytes([0])
-SYN_ACK = bytes([1])
-PKG_BEGIN = 0xBE
-PKG_END = 0xEF
-A_BIT = 1
-B_BIT = 2
-
-TIMER_START = bytes([1])
-TIMER_STOP = bytes([2])
-TIMER_RESET = bytes([3])
-TIMER_SHOW = bytes([4])
-TIMER_HIDE = bytes([5])
-
-uart = UART(baudrate=9600, tx=board.UART_TX2, rx=board.UART_RX2, bits=8, parity=None, stop=1, timeout=0.05)
-
-def send_ready():
-    uart.write(ACK)
-
-print("Waiting for controller SYN")
-timeout = 10
-info_group = None
-while uart.read(1) != SYN:
-    if timeout > 0:
-        timeout -= 1
-        if timeout == 0:
-            info_group = displayio.Group(x=8, y=30)
-            info_area = label.Label(terminalio.FONT, text="Press reset on\nMicrobit", color=0xFF0000)
-            info_group.append(info_area)
-            splash.append(info_group)
-            display.refresh()
-if info_group is not None:
-    splash.remove(info_group)
-    display.refresh()
-
-print("Received SYN")
-send_ready()
-while uart.read(1) != SYN_ACK:
-    print("Waiting for controller SYN-ACK")
-print("Received SYN-ACK")
-send_ready()
-
-def got_pkg_begin():
-    b = uart.read(1)
-    if b is None:
-        return False
-    return b[0] == PKG_BEGIN
 
 sprites.load_all()
 input = Input()
@@ -124,18 +81,10 @@ machine.add_state(GameOverState())
 machine.set_state('playing')
 
 while True:
-    while not got_pkg_begin():
-        pass
-    b = uart.read(4)
+    b = microbit.get_input()
     if b is None:
         continue
-
-    if len(b) != 4 or b[3] != PKG_END:
-        uart.reset_input_buffer()
-        send_ready()
-        continue
-    send_ready()
-    btn_state, acc_ctrl_raw_x, acc_ctrl_raw_y, _ = b
+    btn_state, acc_ctrl_raw_x, acc_ctrl_raw_y = b
 
     input.btn_ma = btn_state & A_BIT
     input.btn_mb = btn_state & B_BIT
