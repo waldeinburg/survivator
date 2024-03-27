@@ -55,6 +55,7 @@ def init(display):
 def read_value_or_reset(value):
     b = uart.read(1)
     if b is None or b[0] != value:
+        print('b', b)
         uart.reset_input_buffer()
         return False
     return True
@@ -92,20 +93,25 @@ def send_command(command, pkg_data, answer_size):
     read_input()
     p = None
     while p is None:
+        print('command', command)
         uart.write(command)
         # If we don't receive OK, then try again immediately.
         if pkg_data is not None:
+            print('expect OK')
             if not read_value_or_reset(OK):
                 continue
+            print('write data', pkg_data)
             uart.write(PKG_BEGIN)
             uart.write(pkg_data)
             uart.write(PKG_END)
         if answer_size == 0:
+            print('expect OK')
             if not read_value_or_reset(OK):
                 continue
             p = True
             break
         else:
+            print('expect data')
             p = read_package(answer_size)
     send_ready_for_input()
     return p

@@ -10,6 +10,7 @@ import constants
 from util import get_random_side_pos, now, get_time_diff, format_time
 
 first_enemy_appear = 1_000
+score_almost_high = 5_000
 hero_max_x = constants.PLAY_WIDTH - constants.HERO_WIDTH
 hero_max_y = constants.PLAY_HEIGHT - constants.HERO_HEIGHT
 sprite_tilt_acc = 0.7
@@ -54,9 +55,9 @@ class PlayingState(State):
         high_text = label.Label(terminalio.FONT, color=0xA0A0A0, anchor_point=(0.0, 1.0), anchored_position=(1, constants.INFO_HEIGHT))
         high_text.text = format_time(machine.highscore)
         machine.play_info_group.append(high_text)
-        score_text = label.Label(terminalio.FONT, color=0xFF0000, anchor_point=(1.0, 1.0), anchored_position=(constants.SCREEN_WIDTH - 1, constants.INFO_HEIGHT))
-        score_text.text = format_time(0)
-        machine.play_info_group.append(score_text)
+        self.score_text = label.Label(terminalio.FONT, color=0xFF0000, anchor_point=(1.0, 1.0), anchored_position=(constants.SCREEN_WIDTH - 1, constants.INFO_HEIGHT))
+        self.score_text.text = format_time(0)
+        machine.play_info_group.append(self.score_text)
 
         machine.play_root_group.append(machine.play_info_group)
 
@@ -75,6 +76,8 @@ class PlayingState(State):
 
 
     def update(self, machine):
+        self.update_score(machine)
+
         if not machine.is_hit:
             i = 0
             while i < len(machine.enemies):
@@ -95,9 +98,20 @@ class PlayingState(State):
             self.update_sprite(machine)
             self.update_enemies(machine)
             self.maybe_add_enemy(machine)
+
         machine.display.refresh()
         if machine.is_hit:
             machine.set_state('game-over')
+
+
+    def update_score(self, machine):
+        machine.score = get_time_diff(machine.start_time, machine.cur_time)
+        self.score_text.text = format_time(machine.score)
+        # Change color from red if gaining a highscore.
+        if machine.score > machine.highscore:
+            self.score_text.color = 0x00FF00
+        elif machine.score >= machine.highscore - score_almost_high:
+            self.score_text.color = 0xFFFF00
 
 
     def update_positition(self, machine):

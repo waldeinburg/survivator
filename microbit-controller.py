@@ -4,10 +4,11 @@ import math
 
 HIGHSCORE_FILENAME='highscore'
 
-SYN = bytes([0])
-ACK = bytes([0])
-SYN_ACK = bytes([1])
+SYN = 0x0
+ACK = 0x0
+SYN_ACK = 0x1
 OK = 0x0
+FAIL = 0x1
 PKG_BEGIN = 0xBE
 PKG_END = 0xEF
 READY_FOR_INPUT = bytes([0])
@@ -43,6 +44,20 @@ def send_input_state():
                       acc_y,
                       PKG_END]))
 
+
+def send_byte(b):
+    uart.write(bytes([b]))
+
+
+def read_package(size):
+    if uart.read(1) != bytes([PKG_BEGIN]):
+        return None
+    b = uart.read(size + 1)
+    if b is None or len(b) != size + 1 or b[-1] != PKG_END:
+        return None
+    return b[:-1]
+
+
 highscore = 0
 try:
     with open(HIGHSCORE_FILENAME, 'r') as f:
@@ -54,19 +69,18 @@ except OSError:
 uart.init(tx=pin1, rx=pin2)
 
 warn_timeout = 20
-while uart.read(1) != ACK:
-    uart.write(SYN)
+while uart.read(1) != bytes([ACK]):
+    send_byte(SYN)
     sleep(100)
     if warn_timeout > 0:
         warn_timeout -= 1
         if warn_timeout == 0:
             display.show('*', wait=False)
 
-uart.write(SYN_ACK)
+send_byte(SYN_ACK)
 
 # Ready!
 display.scroll("Survivator", wait=False)
-
 
 while True:
     v = uart.read(1)
@@ -78,5 +92,14 @@ while True:
         end = bytes([PKG_END])
         uart.write(begin + data + end)
     elif v == PUT_HIGHSCORE:
-        # TODO
-        uart.write(bytes(OK))
+        send_byte(OK)
+        d = read_package(4)
+        if d is None:
+            send_byte(FAIL)
+        # For some reason, micro:bit interface thinks that d is not a byte array.
+        d = bytes([0, 0, 0, 10])
+        highscore = int.from_bytes(d, HIGHSCORE_ORDER)
+        with open(HIGHSCORE_FILENAME, 'w') as f:
+            f.write(str(highscore))
+        send_byte(OK)
+

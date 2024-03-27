@@ -3,6 +3,7 @@ import displayio
 from state import State
 from sprites import sprites
 from util import get_time_diff
+import microbit
 import constants
 
 TIME_PER_SPRITE = 100
@@ -19,6 +20,10 @@ class GameOverState(State):
 
 
     def enter(self, machine):
+        if machine.score > machine.highscore:
+            machine.highscore = machine.score
+            microbit.put_highscore(machine.score)
+
         self.hero_explode_group.x = int(machine.pos_x - (constants.HERO_EXPLODE_WIDTH - constants.HERO_WIDTH) / 2)
         self.hero_explode_group.y = int(machine.pos_y - (constants.HERO_EXPLODE_HEIGHT - constants.HERO_HEIGHT) / 2)
         machine.play_area_group.append(self.hero_explode_group)
