@@ -2,11 +2,11 @@ import displayio
 from adafruit_display_shapes.rect import Rect
 
 import constants
-from util import time_diff
+from util import get_time_diff
 
-wait_time = 0.3
-warning_blink_on_time = 0.05
-warning_blink_off_time = 0.01
+wait_time = 300
+warning_blink_on_time = 50
+warning_blink_off_time = 10
 warning_size = 1
 warning_color = 0xFFFF00
 
@@ -47,13 +47,13 @@ class Enemy:
     def update(self, machine):
         if self.launched:
             self.update_enemy(machine)
-        elif time_diff(self.init_time, machine.cur_time) >= wait_time:
+        elif get_time_diff(self.init_time, machine.cur_time) >= wait_time:
             self.launched = True
             machine.enemy_warning_group.remove(self.warning)
-        elif not self.warning.hidden and time_diff(self.warning_blink_change_time, machine.cur_time) >= warning_blink_on_time:
+        elif not self.warning.hidden and get_time_diff(self.warning_blink_change_time, machine.cur_time) >= warning_blink_on_time:
             self.warning.hidden = True
             self.warning_blink_change_time = machine.cur_time
-        elif self.warning.hidden and time_diff(self.warning_blink_change_time, machine.cur_time) >= warning_blink_off_time:
+        elif self.warning.hidden and get_time_diff(self.warning_blink_change_time, machine.cur_time) >= warning_blink_off_time:
             self.warning.hidden = False
             self.warning_blink_change_time = machine.cur_time
 

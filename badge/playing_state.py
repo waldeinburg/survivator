@@ -7,9 +7,9 @@ from state import State
 from sprites import sprites
 from beam_enemy import BeamEnemy
 import constants
-from util import get_random_side_pos, now, time_diff, format_time
+from util import get_random_side_pos, now, get_time_diff, format_time
 
-first_enemy_appear = 1
+first_enemy_appear = 1_000
 hero_max_x = constants.PLAY_WIDTH - constants.HERO_WIDTH
 hero_max_y = constants.PLAY_HEIGHT - constants.HERO_HEIGHT
 sprite_tilt_acc = 0.7
@@ -19,12 +19,12 @@ sprite_tilt_acc = 0.7
 physics_scale = 0.01
 # Based on feeling
 bounce_factor = 0.31
-# 0.1 and a start gap of 5 seconds would give 50 enemies before the gap reaches 0 and the screen is flooded.
+# 100 ms and a start gap of 5 seconds would give 50 enemies before the gap reaches 0 and the screen is flooded.
 # This means an absolute max playing time of (2*5 + (5/0.1 - 1)*-0.1) / 2* 5/0.1 = 127.5 seconds.
-# A value of 0.01 means a max playing time of almost 21 minutes which gives reasonable space for beating a
+# A value of 10 ms means a max playing time of almost 21 minutes which gives reasonable space for beating a
 # highscore by more than just fractions of seconds.
-# A value of 0.5 gives 27.5 seconds before the flood.
-enemy_time_gap_shrink = 0.01
+# A value of 500 gives 27.5 seconds before the flood.
+enemy_time_gap_shrink = 10
 
 class PlayingState(State):
     @property
@@ -55,7 +55,7 @@ class PlayingState(State):
         high_text.text = format_time(machine.highscore)
         machine.play_info_group.append(high_text)
         score_text = label.Label(terminalio.FONT, color=0xFF0000, anchor_point=(1.0, 1.0), anchored_position=(constants.SCREEN_WIDTH - 1, constants.INFO_HEIGHT))
-        score_text.text = format_time(0.0)
+        score_text.text = format_time(0)
         machine.play_info_group.append(score_text)
 
         machine.play_root_group.append(machine.play_info_group)
@@ -102,12 +102,12 @@ class PlayingState(State):
 
     def update_positition(self, machine):
         input = machine.input
-        time_diff = machine.time_diff
-        machine.vel_x += input.acc_x * time_diff * physics_scale
-        machine.vel_y += input.acc_y * time_diff * physics_scale
+        time_diff_sec = machine.time_diff / 1000
+        machine.vel_x += input.acc_x * time_diff_sec * physics_scale
+        machine.vel_y += input.acc_y * time_diff_sec * physics_scale
 
-        dx = machine.vel_x * time_diff * constants.PX_PER_M
-        dy = machine.vel_y * time_diff * constants.PX_PER_M
+        dx = machine.vel_x * time_diff_sec * constants.PX_PER_M
+        dy = machine.vel_y * time_diff_sec * constants.PX_PER_M
 
         nx_tmp = machine.pos_x + dx
         ny_tmp = machine.pos_y + dy
@@ -143,10 +143,10 @@ class PlayingState(State):
 
 
     def maybe_add_enemy(self, machine):
-        if time_diff(machine.enemy_add_time, machine.cur_time) < \
+        if get_time_diff(machine.enemy_add_time, machine.cur_time) < \
                (machine.enemy_time_gap if not machine.waiting_for_first_enemy else first_enemy_appear):
             return
-        machine.enemy_time_gap = max(machine.enemy_time_gap - enemy_time_gap_shrink, 0)
+        machine.enemy_time_gap = max(machine.enemy_time_gap - enemy_time_gap_shrink, 1)
         machine.waiting_for_first_enemy = False
         machine.enemy_add_time = now()
         enemy = self.get_random_enemy(machine)

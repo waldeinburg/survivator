@@ -1,5 +1,5 @@
 # Design inspired by / stolen from https://learn.adafruit.com/circuitpython-101-state-machines
-from util import now, time_diff
+from util import now, get_time_diff
 import constants
 import microbit
 
@@ -61,7 +61,7 @@ class StateMachine:
         self.waiting_for_first_enemy = True
         self.enemies = []
         self.enemy_add_time = now()
-        self.enemy_time_gap = 5
+        self.enemy_time_gap = 5_000
 
 
     def add_state(self, state):
@@ -77,6 +77,6 @@ class StateMachine:
 
     def update(self):
         new_time = now()
-        self.time_diff = time_diff(self.cur_time, new_time);
+        self.time_diff = get_time_diff(self.cur_time, new_time);
         self.cur_time = new_time
         self.state.update(self)

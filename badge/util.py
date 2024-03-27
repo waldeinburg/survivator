@@ -1,6 +1,6 @@
 import math
 from random import randrange, choice
-import time
+import supervisor
 
 import constants
 
@@ -72,29 +72,37 @@ def get_hero_center(machine):
     )
 
 
-# Time functions. Always use these so that we can shift from time.monotonic to supervisor.ticks_ms to be able to run precisely after 1 hour.
+# Time functions using supervisor.ticks_ms to avoid floating point errors from time.monotonic.
+# Ticks does NOT necessarily start on 0 at startup! Therefore some code is taken from
+# https://docs.circuitpython.org/en/latest/shared-bindings/supervisor/index.html#supervisor.ticks_ms
+
+_TICKS_PERIOD = const(1<<29)
+_TICKS_MAX = const(_TICKS_PERIOD-1)
+_TICKS_HALFPERIOD = const(_TICKS_PERIOD//2)
+
 def now():
-    return time.monotonic()
+    return supervisor.ticks_ms()
 
 
-def time_diff(a, b):
-    return b - a
+def get_time_diff(a, b):
+    "Compute the signed difference between two ticks values, assuming that they are within 2**28 ticks"
+    return ((((b - a) & _TICKS_MAX) + _TICKS_HALFPERIOD) & _TICKS_MAX) - _TICKS_HALFPERIOD
 
 
-def format_time(time):
+def format_time(time_ms):
     '''
     Format time only with necessary parts.
     '''
-    # The system has some bad floating point handling (int(4.123 * 1000) == 4122).
-    # We could get the digits from str(time) but it would be slower and we will loose the precision while
-    # converting from float to int while saving anyway.
-    # TODO: read/write highscore as string instead of milliseconds int.
     res = ''
-    sec = int(time)
-    h = sec // 3600
-    hr = sec % 3600
-    m = hr // 60
-    s = hr % 60
+    h = time_ms // 3600_000
+    hr = time_ms % 3600_000
+    m = hr // 60_000
+    mr = hr % 60_000
+    s = mr // 1000
+    ms = mr % 1000
+    ms100 = ms // 100
+    ms10 = (ms % 100) // 10
+    ms1 = ms % 10
     if h > 0:
         res = str(h) + ':'
         if m < 10:
@@ -103,12 +111,5 @@ def format_time(time):
         res += str(m) + ':'
         if s < 10:
             res += '0'
-
-    ms = int((time - sec) * 1000)
-    ms100 = int(ms / 100)
-    ms10 = int((ms - ms100 * 100) / 10)
-    ms1 = ms - ms10 * 10 - ms100 * 100
-
     res += str(s) + '.' + str(ms100) + str(ms10) + str(ms1)
-
     return res

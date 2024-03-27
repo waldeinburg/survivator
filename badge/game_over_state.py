@@ -2,9 +2,10 @@ import displayio
 
 from state import State
 from sprites import sprites
+from util import get_time_diff
 import constants
 
-TIME_PER_SPRITE = 0.1
+TIME_PER_SPRITE = 100
 
 class GameOverState(State):
     @property
@@ -48,7 +49,7 @@ class GameOverState(State):
         if machine.hero_explode_sprite_idx is None:
             return
         self.hero_explode_sprite[0] = machine.hero_explode_sprite_idx
-        if machine.hero_explode_sprite_idx < 9 and machine.cur_time - machine.hero_explode_last_update >= TIME_PER_SPRITE:
+        if machine.hero_explode_sprite_idx < 9 and get_time_diff(machine.hero_explode_last_update, machine.cur_time) >= TIME_PER_SPRITE:
             machine.hero_explode_last_update = machine.cur_time
             machine.hero_explode_sprite_idx += 1
 

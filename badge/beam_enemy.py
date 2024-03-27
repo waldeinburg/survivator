@@ -46,8 +46,9 @@ class BeamEnemy(Enemy):
                 self.active = False
             return
 
-        dx = self.vel_x * machine.time_diff
-        dy = self.vel_y * machine.time_diff
+        time_diff_sec = machine.time_diff / 1000
+        dx = self.vel_x * time_diff_sec
+        dy = self.vel_y * time_diff_sec
         new_cur_x = max(min(self.cur_x + dx, max_x), 0)
         new_cur_y = max(min(self.cur_y + dy, max_y), 0)
 

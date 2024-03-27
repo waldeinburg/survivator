@@ -113,8 +113,8 @@ def send_command(command, pkg_data, answer_size):
 
 
 def get_highscore():
-    return int.from_bytes(send_command(GET_HIGHSCORE, None, HIGHSCORE_SIZE), HIGHSCORE_ORDER) / 1000
+    return int.from_bytes(send_command(GET_HIGHSCORE, None, HIGHSCORE_SIZE), HIGHSCORE_ORDER)
 
 
 def put_highscore(score):
-    send_command(PUT_HIGHSCORE, int(score * 1000).to_bytes(HIGHSCORE_SIZE, HIGHSCORE_ORDER), 0)
+    send_command(PUT_HIGHSCORE, score.to_bytes(HIGHSCORE_SIZE, HIGHSCORE_ORDER), 0)
