@@ -39,7 +39,6 @@ class StateMachine:
         self.input = input
         # The badge has a read only file system while we can save the highscore on the micro:bit.
         self.highscore = microbit.get_highscore()
-        print('highscore', self.highscore)
 
 
     def reset_game_state(self):

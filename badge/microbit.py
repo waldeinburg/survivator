@@ -4,11 +4,14 @@ import terminalio
 from adafruit_display_text import label
 from busio import UART
 
+from util import dbg, Retry
+
+# TODO: Clean up messy mix of using value and byte array value.
 SYN = bytes([0])
 ACK = bytes([0])
 SYN_ACK = bytes([1])
-OK = bytes([0])
-READY_FOR_INPUT = bytes([0])
+READY_FOR_INPUT = bytes([0x0])
+OK = 0x0
 PKG_BEGIN = 0xBE
 PKG_END = 0xEF
 
@@ -29,6 +32,8 @@ def send_ready_for_input():
 
 def init(display):
     global uart
+    if uart is not None:
+        raise Exception('UART already initialized')
     uart = UART(baudrate=9600, tx=board.UART_TX2, rx=board.UART_RX2, bits=8, parity=None, stop=1, timeout=0.05)
 
     print("Waiting for controller SYN")
@@ -44,6 +49,7 @@ def init(display):
                 display.show(info_group)
                 display.refresh()
 
+
     print("Received SYN")
     uart.write(ACK)
     while uart.read(1) != SYN_ACK:
@@ -55,7 +61,7 @@ def init(display):
 def read_value_or_reset(value):
     b = uart.read(1)
     if b is None or b[0] != value:
-        print('b', b)
+        dbg('failed read', b)
         uart.reset_input_buffer()
         return False
     return True
@@ -89,29 +95,30 @@ def get_input():
 
 
 def send_command(command, pkg_data, answer_size):
+    r = Retry()
     # Discard input.
     read_input()
     p = None
     while p is None:
-        print('command', command)
+        dbg('command', command)
         uart.write(command)
-        # If we don't receive OK, then try again immediately.
+        # If we doprintn't receive OK, then try again immediately.
         if pkg_data is not None:
-            print('expect OK')
+            dbg('expect OK')
             if not read_value_or_reset(OK):
+                r.inc()
                 continue
-            print('write data', pkg_data)
-            uart.write(PKG_BEGIN)
-            uart.write(pkg_data)
-            uart.write(PKG_END)
+            dbg('write data', pkg_data)
+            uart.write(bytes([PKG_BEGIN]) + pkg_data + bytes([PKG_END]))
         if answer_size == 0:
-            print('expect OK')
+            dbg('expect OK')
             if not read_value_or_reset(OK):
+                r.inc()
                 continue
             p = True
             break
         else:
-            print('expect data')
+            dbg('expect data')
             p = read_package(answer_size)
     send_ready_for_input()
     return p
@@ -119,8 +126,12 @@ def send_command(command, pkg_data, answer_size):
 
 
 def get_highscore():
-    return int.from_bytes(send_command(GET_HIGHSCORE, None, HIGHSCORE_SIZE), HIGHSCORE_ORDER)
+    h = int.from_bytes(send_command(GET_HIGHSCORE, None, HIGHSCORE_SIZE), HIGHSCORE_ORDER)
+    dbg('highscore', h)
+    return h
 
 
 def put_highscore(score):
-    send_command(PUT_HIGHSCORE, score.to_bytes(HIGHSCORE_SIZE, HIGHSCORE_ORDER), 0)
+    b = score.to_bytes(HIGHSCORE_SIZE, HIGHSCORE_ORDER)
+    dbg('score', score, 'b', b)
+    send_command(PUT_HIGHSCORE, b, 0)

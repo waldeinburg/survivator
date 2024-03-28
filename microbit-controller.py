@@ -1,6 +1,11 @@
 from microbit import *
 import utime
-import math
+
+DEBUG=False
+
+def dbg(arg):
+    if DEBUG:
+        display.scroll(arg, loop=True, wait=False)
 
 HIGHSCORE_FILENAME='highscore'
 
@@ -50,12 +55,15 @@ def send_byte(b):
 
 
 def read_package(size):
-    if uart.read(1) != bytes([PKG_BEGIN]):
+    b = uart.read(1)
+    if b != bytes([PKG_BEGIN]):
+        dbg("B:" + str(b))
         return None
-    b = uart.read(size + 1)
-    if b is None or len(b) != size + 1 or b[-1] != PKG_END:
+    d = uart.read(size + 1)
+    if d is None or len(d) != size + 1 or d[-1] != PKG_END:
+        dbg("D:" + str(d))
         return None
-    return b[:-1]
+    return d[:-1]
 
 
 highscore = 0
@@ -93,13 +101,16 @@ while True:
         uart.write(begin + data + end)
     elif v == PUT_HIGHSCORE:
         send_byte(OK)
+        # The timeout is 2.4ms which does not seem to be enough to respond to the OK.
+        utime.sleep_ms(10)
         d = read_package(4)
         if d is None:
             send_byte(FAIL)
+            continue
         # For some reason, micro:bit interface thinks that d is not a byte array.
-        d = bytes([0, 0, 0, 10])
         highscore = int.from_bytes(d, HIGHSCORE_ORDER)
         with open(HIGHSCORE_FILENAME, 'w') as f:
             f.write(str(highscore))
         send_byte(OK)
+        dbg('OK:' + str(highscore))
 

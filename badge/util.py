@@ -1,6 +1,7 @@
 import math
 from random import randrange, choice
 import supervisor
+import sys
 
 import constants
 
@@ -12,6 +13,28 @@ RIGHT = 'RIGHT'
 UP = 'UP'
 DOWN = 'DOWN'
 sides = (LEFT, RIGHT, UP, DOWN)
+
+
+class Retry:
+    def __init__(self, max_retries=10):
+        self.max_retries = max_retries
+        self.retries = 0
+
+
+    def reset(self):
+        self.retries = 0
+
+
+    def inc(self):
+        self.retries += 1
+        if self.retries > self.max_retries:
+            print('Retries exceeded')
+            sys.exit(1)
+
+
+def dbg(*args):
+    if constants.DEBUG:
+        print(" ".join(map(str, args)))
 
 
 def _get_random_pos(hero_pos, max_pos):
