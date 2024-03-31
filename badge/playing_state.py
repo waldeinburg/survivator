@@ -126,9 +126,9 @@ class PlayingState(State):
         nx_tmp = machine.pos_x + dx
         ny_tmp = machine.pos_y + dy
 
-        if nx_tmp < 0 or nx_tmp > 128 - constants.HERO_WIDTH:
+        if nx_tmp < 0 or nx_tmp > constants.PLAY_WIDTH - constants.HERO_WIDTH:
             machine.vel_x *= -bounce_factor
-        if ny_tmp < 0 or ny_tmp > 160 - constants.HERO_HEIGHT:
+        if ny_tmp < 0 or ny_tmp > constants.PLAY_HEIGHT - constants.HERO_HEIGHT:
             machine.vel_y *= -bounce_factor
 
         machine.pos_x = max(min(nx_tmp, hero_max_x), 0)
