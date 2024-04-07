@@ -38,6 +38,22 @@ class PlayingState(State):
         self.hero_group = displayio.Group()
         self.hero_group.append(self.hero_sprite)
 
+        self.shield_groups = {}
+        self.add_shield_group('top', (constants.SHIELD_WIDTH - constants.HERO_WIDTH) // -2, -constants.SHIELD_DEPTH)
+        self.add_shield_group('right', constants.HERO_WIDTH, (constants.SHIELD_WIDTH - constants.HERO_HEIGHT) // -2)
+        self.add_shield_group('bottom', (constants.SHIELD_WIDTH - constants.HERO_WIDTH) // -2, constants.HERO_HEIGHT)
+        self.add_shield_group('left', -constants.SHIELD_DEPTH, (constants.SHIELD_WIDTH - constants.HERO_HEIGHT) // -2)
+
+
+    def add_shield_group(self, orientation, x, y):
+        g = displayio.Group()
+        g.append(sprites['shield'][orientation])
+        g.hidden = True
+        g.x = x
+        g.y = y
+        self.shield_groups[orientation] = g
+        self.hero_group.append(g)
+
 
     def enter(self, machine):
         self.hero_group.x = int(machine.pos_x)
@@ -61,7 +77,6 @@ class PlayingState(State):
 
         machine.play_root_group.append(machine.play_info_group)
 
-
         machine.play_area_group = displayio.Group(y=constants.INFO_HEIGHT)
         machine.enemy_warning_group = displayio.Group()
         machine.play_area_group.append(machine.enemy_warning_group)
@@ -77,6 +92,11 @@ class PlayingState(State):
 
     def update(self, machine):
         self.update_score(machine)
+
+        self.update_shield(machine, 'top')
+        self.update_shield(machine, 'right')
+        self.update_shield(machine, 'bottom')
+        self.update_shield(machine, 'left')
 
         if not machine.is_hit:
             i = 0
@@ -112,6 +132,13 @@ class PlayingState(State):
             self.score_text.color = 0x00FF00
         elif machine.score >= machine.highscore - score_almost_high:
             self.score_text.color = 0xFFFF00
+
+
+    def update_shield(self, machine, orientation):
+        if machine.shields[orientation].active:
+            self.shield_groups[orientation].hidden = False
+        else:
+            self.shield_groups[orientation].hidden = True
 
 
     def update_positition(self, machine):

@@ -1,5 +1,5 @@
 # Design inspired by / stolen from https://learn.adafruit.com/circuitpython-101-state-machines
-from util import now, get_time_diff
+from util import now, get_time_diff, time_add
 import constants
 import microbit
 
@@ -29,6 +29,14 @@ class State:
 
     def update(self, machine):
         pass
+
+
+class ShieldState:
+    def __init__(self):
+        self.active = False
+        self.active_since = None
+        # Inactive for an hour; so we don't have to check for None.
+        self.inactive_since = time_add(now(), -3600_000)
 
 
 class StateMachine:
@@ -61,6 +69,13 @@ class StateMachine:
         self.enemies = []
         self.enemy_add_time = now()
         self.enemy_time_gap = 5_000
+
+        self.shields = {
+            'top': ShieldState(),
+            'right': ShieldState(),
+            'bottom': ShieldState(),
+            'left': ShieldState()
+        }
 
 
     def add_state(self, state):
