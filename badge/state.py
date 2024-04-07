@@ -34,9 +34,9 @@ class State:
 class ShieldState:
     def __init__(self):
         self.active = False
-        self.active_since = None
+        self.active_time = None
         # Inactive for an hour; so we don't have to check for None.
-        self.inactive_since = time_add(now(), -3600_000)
+        self.inactive_time = time_add(now(), -3600_000)
 
 
 class StateMachine:

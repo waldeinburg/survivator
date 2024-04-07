@@ -11,6 +11,9 @@ from util import get_random_side_pos, now, get_time_diff, format_time
 
 first_enemy_appear = 1_000
 score_almost_high = 5_000
+shield_active_time = 2_000
+shield_recharge_time = 500
+shield_fading_time = 1_500
 hero_max_x = constants.PLAY_WIDTH - constants.HERO_WIDTH
 hero_max_y = constants.PLAY_HEIGHT - constants.HERO_HEIGHT
 sprite_tilt_acc = 0.7
@@ -38,26 +41,30 @@ class PlayingState(State):
         self.hero_group = displayio.Group()
         self.hero_group.append(self.hero_sprite)
 
-        self.shield_groups = {}
-        self.add_shield_group('top', (constants.SHIELD_WIDTH - constants.HERO_WIDTH) // -2, -constants.SHIELD_DEPTH)
-        self.add_shield_group('right', constants.HERO_WIDTH, (constants.SHIELD_WIDTH - constants.HERO_HEIGHT) // -2)
-        self.add_shield_group('bottom', (constants.SHIELD_WIDTH - constants.HERO_WIDTH) // -2, constants.HERO_HEIGHT)
-        self.add_shield_group('left', -constants.SHIELD_DEPTH, (constants.SHIELD_WIDTH - constants.HERO_HEIGHT) // -2)
+        self.shield_sprites = {}
+        self.add_shield_sprites('top', (constants.SHIELD_WIDTH - constants.HERO_WIDTH) // -2, -constants.SHIELD_DEPTH)
+        self.add_shield_sprites('right', constants.HERO_WIDTH, (constants.SHIELD_WIDTH - constants.HERO_HEIGHT) // -2)
+        self.add_shield_sprites('bottom', (constants.SHIELD_WIDTH - constants.HERO_WIDTH) // -2, constants.HERO_HEIGHT)
+        self.add_shield_sprites('left', -constants.SHIELD_DEPTH, (constants.SHIELD_WIDTH - constants.HERO_HEIGHT) // -2)
 
 
-    def add_shield_group(self, orientation, x, y):
-        g = displayio.Group()
-        g.append(sprites['shield'][orientation])
-        g.hidden = True
-        g.x = x
-        g.y = y
-        self.shield_groups[orientation] = g
-        self.hero_group.append(g)
+    def add_shield_sprites(self, orientation, x, y):
+        s = sprites['shield'][orientation]
+        s.hidden = True
+        s.x = x
+        s.y = y
+        self.shield_sprites[orientation] = s
+        self.hero_group.append(s)
 
 
     def enter(self, machine):
         self.hero_group.x = int(machine.pos_x)
         self.hero_group.y = int(machine.pos_y)
+
+        self.reset_shield('top')
+        self.reset_shield('right')
+        self.reset_shield('bottom')
+        self.reset_shield('left')
 
         machine.play_root_group = displayio.Group()
 
@@ -86,6 +93,12 @@ class PlayingState(State):
         machine.display.show(machine.play_root_group)
 
 
+    def reset_shield(self, orientation):
+        s = self.shield_sprites[orientation]
+        s.hidden = True
+        s[0] = 0
+
+
     def exit(self, machine):
         machine.play_area_group.remove(self.hero_group)
 
@@ -93,10 +106,10 @@ class PlayingState(State):
     def update(self, machine):
         self.update_score(machine)
 
-        self.update_shield(machine, 'top')
-        self.update_shield(machine, 'right')
-        self.update_shield(machine, 'bottom')
-        self.update_shield(machine, 'left')
+        self.update_shield(machine, machine.input.btn_a, 'top')
+        self.update_shield(machine, machine.input.btn_y, 'right')
+        self.update_shield(machine, machine.input.btn_b, 'bottom')
+        self.update_shield(machine, machine.input.btn_x, 'left')
 
         if not machine.is_hit:
             i = 0
@@ -134,11 +147,20 @@ class PlayingState(State):
             self.score_text.color = 0xFFFF00
 
 
-    def update_shield(self, machine, orientation):
-        if machine.shields[orientation].active:
-            self.shield_groups[orientation].hidden = False
-        else:
-            self.shield_groups[orientation].hidden = True
+    def update_shield(self, machine, button, orientation):
+        shield = machine.shields[orientation]
+        if shield.active:
+            if not button or get_time_diff(shield.active_time, machine.cur_time) > shield_active_time:
+                shield.active = False
+                shield.inactive_time = machine.cur_time
+                self.shield_sprites[orientation].hidden = True
+            elif button and get_time_diff(shield.active_time, machine.cur_time) > shield_fading_time:
+                self.shield_sprites[orientation][0] = 1
+        elif button and get_time_diff(shield.inactive_time, machine.cur_time) > shield_recharge_time:
+            shield.active = True
+            shield.active_time = machine.cur_time
+            self.shield_sprites[orientation][0] = 0
+            self.shield_sprites[orientation].hidden = False
 
 
     def update_positition(self, machine):
