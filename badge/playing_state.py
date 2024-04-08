@@ -6,6 +6,7 @@ import terminalio
 from state import State
 from sprites import sprites
 from beam_enemy import BeamEnemy
+from firewall_enemy import FirewallEnemy
 import constants
 from util import get_random_side_pos, now, get_time_diff, format_time
 
@@ -206,6 +207,16 @@ class PlayingState(State):
 
 
     def maybe_add_enemy(self, machine):
+        #TODO: remove (test)
+        if len(machine.enemies) == 0:
+            machine.enemies.append(FirewallEnemy('LEFT', 0, 0, machine))
+        elif len(machine.enemies) == 1:
+            machine.enemies.append(FirewallEnemy('RIGHT', 0, 0, machine))
+        elif len(machine.enemies) == 2:
+            machine.enemies.append(FirewallEnemy('UP', 0, 0, machine))
+        elif len(machine.enemies) == 3:
+            machine.enemies.append(FirewallEnemy('DOWN', 0, 0, machine))
+
         if get_time_diff(machine.enemy_add_time, machine.cur_time) < \
                (machine.enemy_time_gap if not machine.waiting_for_first_enemy else first_enemy_appear):
             return
