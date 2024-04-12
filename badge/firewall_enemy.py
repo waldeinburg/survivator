@@ -9,8 +9,8 @@ from util import LEFT, RIGHT, UP, DOWN, get_time_diff
 
 MIN_X = -constants.FIREWALL_DEPTH
 MIN_Y = -constants.FIREWALL_DEPTH
-MAX_X = constants.PLAY_WIDTH + constants.FIREWALL_DEPTH
-MAX_Y = constants.PLAY_HEIGHT + constants.FIREWALL_DEPTH
+MAX_X = constants.PLAY_WIDTH
+MAX_Y = constants.PLAY_HEIGHT
 
 # Avoid syncronized animation of multiple walls by using an uneven number.
 TIME_PER_SPRITE = 113
@@ -24,28 +24,29 @@ class FirewallEnemy(Enemy):
     def __init__(self, side, start_x, start_y, machine):
         super().__init__(side, start_x, start_y, machine)
         self.init_speed = 100
+        self.hit = False
 
         if side == LEFT or side == RIGHT:
-            self.cur_y = 0
+            self.y = 0
             self.vel_y = 0
             self.size = constants.FIREWALL_VER_SIZE
             self.tiles = constants.FIREWALL_VER_TILES
             if side == LEFT:
-                self.cur_x = MIN_X
+                self.x = MIN_X
                 self.vel_x = self.init_speed
             else:
-                self.cur_x = MAX_X
+                self.x = MAX_X
                 self.vel_x = -self.init_speed
         elif side == UP or side == DOWN:
-            self.cur_x = 0
+            self.x = 0
             self.vel_x = 0
             self.size = constants.FIREWALL_HOR_SIZE
             self.tiles = constants.FIREWALL_HOR_TILES
             if side == UP:
-                self.cur_y = MIN_Y
+                self.y = MIN_Y
                 self.vel_y = self.init_speed
             else:
-                self.cur_y = MAX_Y
+                self.y = MAX_Y
                 self.vel_y = -self.init_speed
 
         self.side = side
@@ -53,9 +54,14 @@ class FirewallEnemy(Enemy):
         self.sprite = sprites['firewall'][side]
         self.last_update_time = machine.cur_time
         self.randomize_tiles()
-        self.group.x = self.cur_x
-        self.group.y = self.cur_y
+        self.group.x = self.x
+        self.group.y = self.y
         self.group.append(self.sprite)
+
+
+    def destroy(self, machine):
+        self.group.remove(self.sprite)
+        machine.firewalls[self.side] = False
 
 
     def update_enemy(self, machine):
@@ -63,15 +69,24 @@ class FirewallEnemy(Enemy):
             self.last_update_time = machine.cur_time
             self.randomize_tiles()
 
-        time_diff_sec = machine.time_diff / 1000
-        dx = self.vel_x * time_diff_sec
-        dy = self.vel_y * time_diff_sec
-        self.cur_x = self.cur_x + dx
-        self.cur_y = self.cur_y + dy
-        self.group.x = round(self.cur_x)
-        self.group.y = round(self.cur_y)
+        if self.side == LEFT and machine.shields[LEFT].active and self.x + constants.FIREWALL_DEPTH >= machine.pos_x - constants.SHIELD_DEPTH:
+            self.x = machine.pos_x - constants.SHIELD_DEPTH - constants.FIREWALL_DEPTH
+        elif self.side == RIGHT and machine.shields[RIGHT].active and self.x <= machine.pos_x + constants.HERO_WIDTH + constants.SHIELD_DEPTH:
+            self.x = machine.pos_x + constants.HERO_WIDTH + constants.SHIELD_DEPTH
+        elif self.side == UP and machine.shields[UP].active and self.y + constants.FIREWALL_DEPTH >= machine.pos_y - constants.SHIELD_DEPTH:
+            self.y = machine.pos_y - constants.SHIELD_DEPTH - constants.FIREWALL_DEPTH
+        elif self.side == DOWN and machine.shields[DOWN].active and self.y <= machine.pos_y + constants.HERO_HEIGHT + constants.SHIELD_DEPTH:
+            self.y = machine.pos_y + constants.HERO_HEIGHT + constants.SHIELD_DEPTH
+        else:
+            time_diff_sec = machine.time_diff / 1000
+            dx = self.vel_x * time_diff_sec
+            dy = self.vel_y * time_diff_sec
+            self.x = self.x + dx
+            self.y = self.y + dy
+        self.group.x = round(self.x)
+        self.group.y = round(self.y)
 
-        if self.cur_x < MIN_X or self.cur_x > MAX_X or self.cur_y < MIN_Y or self.cur_y > MAX_Y:
+        if self.x < MIN_X or self.x > MAX_X or self.y < MIN_Y or self.y > MAX_Y:
             self.active = False
 
 
@@ -81,7 +96,11 @@ class FirewallEnemy(Enemy):
             self.flip_y = randrange(0, 2) == 1
 
 
-    def destroy(self, machine):
-        self.group.remove(self.sprite)
-        machine.firewalls[self.side] = False
-
+    def has_hit(self, machine):
+        if self.hit:
+            return True
+        self.hit = self.side == LEFT and self.x + constants.FIREWALL_DEPTH >= machine.pos_x or \
+            self.side == RIGHT and self.x <= machine.pos_x + constants.HERO_WIDTH or \
+            self.side == UP and self.y + constants.FIREWALL_DEPTH >= machine.pos_y or \
+            self.side == DOWN and self.y <= machine.pos_y + constants.HERO_HEIGHT
+        return self.hit

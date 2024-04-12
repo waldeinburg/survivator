@@ -52,10 +52,10 @@ def load_all():
         tile_width=constants.HERO_EXPLODE_WIDTH, tile_height=constants.HERO_EXPLODE_HEIGHT,
         default_tile=0)
     sprites['shield'] = {
-        'top': _load_shield_sprite(False, False),
-        'right': _load_shield_sprite(True, True),
-        'bottom': _load_shield_sprite(True, False),
-        'left': _load_shield_sprite(False, True)
+        UP: _load_shield_sprite(False, False),
+        RIGHT: _load_shield_sprite(True, True),
+        DOWN: _load_shield_sprite(True, False),
+        LEFT: _load_shield_sprite(False, True)
     }
     sprites['firewall'] = {
         UP: _load_firewall_sprite(constants.FIREWALL_HOR_TILE_SIZE, 1, constants.FIREWALL_HOR_SIZE, True, False, True),

@@ -81,10 +81,10 @@ class StateMachine:
         }
 
         self.shields = {
-            'top': ShieldState(),
-            'right': ShieldState(),
-            'bottom': ShieldState(),
-            'left': ShieldState()
+            UP: ShieldState(),
+            RIGHT: ShieldState(),
+            DOWN: ShieldState(),
+            LEFT: ShieldState()
         }
 
 

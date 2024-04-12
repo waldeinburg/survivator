@@ -33,13 +33,20 @@ class GameOverState(State):
 
 
     def exit(self, machine):
+        self.cleanup(machine)
+
+
+    def cleanup(self, machine):
         if machine.hero_explode_sprite_idx is not None:
             machine.play_area_group.remove(self.hero_explode_group)
+        for e in machine.enemies:
+            e.destroy(machine)
 
 
     def update(self, machine):
         self.update_sprite(machine)
         if machine.input.btn_mb:
+            self.cleanup(machine) # Cleanup before game state reset.
             machine.reset_game_state()
             machine.set_state('playing')
             return

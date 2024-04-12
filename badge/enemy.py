@@ -62,17 +62,18 @@ class Enemy:
             self.warning_blink_change_time = machine.cur_time
 
 
-    def update_enemy(self, machine):
+    def destroy(self, machine):
         pass
 
 
-    def is_active(self, machine):
-        return self.active
+    def update_enemy(self, machine):
+        pass
 
 
     def has_hit(self, machine):
         return False
 
-    def destroy(self, machine):
-        pass
+
+    def is_active(self, machine):
+        return self.active
 

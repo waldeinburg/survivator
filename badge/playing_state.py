@@ -9,7 +9,7 @@ from sprites import sprites
 from beam_enemy import BeamEnemy
 from firewall_enemy import FirewallEnemy
 import constants
-from util import get_random_side_pos, now, get_time_diff, format_time
+from util import LEFT, RIGHT, UP, DOWN, sides, get_random_side_pos, now, get_time_diff, format_time
 
 first_enemy_appear = 1_000
 score_almost_high = 5_000
@@ -44,10 +44,10 @@ class PlayingState(State):
         self.hero_group.append(self.hero_sprite)
 
         self.shield_sprites = {}
-        self.add_shield_sprites('top', (constants.SHIELD_WIDTH - constants.HERO_WIDTH) // -2, -constants.SHIELD_DEPTH)
-        self.add_shield_sprites('right', constants.HERO_WIDTH, (constants.SHIELD_WIDTH - constants.HERO_HEIGHT) // -2)
-        self.add_shield_sprites('bottom', (constants.SHIELD_WIDTH - constants.HERO_WIDTH) // -2, constants.HERO_HEIGHT)
-        self.add_shield_sprites('left', -constants.SHIELD_DEPTH, (constants.SHIELD_WIDTH - constants.HERO_HEIGHT) // -2)
+        self.add_shield_sprites(UP, (constants.SHIELD_WIDTH - constants.HERO_WIDTH) // -2, -constants.SHIELD_DEPTH)
+        self.add_shield_sprites(RIGHT, constants.HERO_WIDTH, (constants.SHIELD_WIDTH - constants.HERO_HEIGHT) // -2)
+        self.add_shield_sprites(DOWN, (constants.SHIELD_WIDTH - constants.HERO_WIDTH) // -2, constants.HERO_HEIGHT)
+        self.add_shield_sprites(LEFT, -constants.SHIELD_DEPTH, (constants.SHIELD_WIDTH - constants.HERO_HEIGHT) // -2)
 
 
     def add_shield_sprites(self, orientation, x, y):
@@ -63,10 +63,8 @@ class PlayingState(State):
         self.hero_group.x = int(machine.pos_x)
         self.hero_group.y = int(machine.pos_y)
 
-        self.reset_shield('top')
-        self.reset_shield('right')
-        self.reset_shield('bottom')
-        self.reset_shield('left')
+        for s in sides:
+            self.reset_shield(s)
 
         machine.play_root_group = displayio.Group()
 
@@ -110,10 +108,10 @@ class PlayingState(State):
     def update(self, machine):
         self.update_score(machine)
 
-        self.update_shield(machine, machine.input.btn_a, 'top')
-        self.update_shield(machine, machine.input.btn_y, 'right')
-        self.update_shield(machine, machine.input.btn_b, 'bottom')
-        self.update_shield(machine, machine.input.btn_x, 'left')
+        self.update_shield(machine, machine.input.btn_a, UP)
+        self.update_shield(machine, machine.input.btn_y, RIGHT)
+        self.update_shield(machine, machine.input.btn_b, DOWN)
+        self.update_shield(machine, machine.input.btn_x, LEFT)
 
         if not machine.is_hit:
             i = 0
@@ -189,8 +187,8 @@ class PlayingState(State):
         machine.pos_x = max(min(nx_tmp, hero_max_x), 0)
         machine.pos_y = max(min(ny_tmp, hero_max_y), 0)
 
-        self.hero_group.x = int(machine.pos_x)
-        self.hero_group.y = int(machine.pos_y)
+        self.hero_group.x = round(machine.pos_x)
+        self.hero_group.y = round(machine.pos_y)
 
 
     def update_sprite(self, machine):
@@ -225,17 +223,6 @@ class PlayingState(State):
 
 
     def get_random_enemy(self, machine):
-        #TODO: remove (test)
-        if False:
-            if machine.enemies_launched == 0:
-                return FirewallEnemy('LEFT', 0, 0, machine)
-            elif machine.enemies_launched == 1:
-                return FirewallEnemy('RIGHT', 0, 0, machine)
-            elif machine.enemies_launched == 2:
-                return FirewallEnemy('UP', 0, 0, machine)
-            elif machine.enemies_launched == 3:
-                return FirewallEnemy('DOWN', 0, 0, machine)
-
         side, x, y = get_random_side_pos()
         enemy_type = random.choice((BeamEnemy, FirewallEnemy))
         # If this type cannot be added with those parameters, default to BeamEnemy.
