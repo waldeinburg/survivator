@@ -3,6 +3,8 @@ from util import now, get_time_diff, time_add
 import constants
 import microbit
 
+from util import LEFT, RIGHT, UP, DOWN
+
 
 class Input:
     def __init__(self):
@@ -69,6 +71,14 @@ class StateMachine:
         self.enemies = []
         self.enemy_add_time = now()
         self.enemy_time_gap = 5_000
+        self.enemies_launched = 0
+        self.enemies_evaded = 0
+        self.firewalls = {
+            UP: False,
+            DOWN: False,
+            LEFT: False,
+            RIGHT: False
+        }
 
         self.shields = {
             'top': ShieldState(),

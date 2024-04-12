@@ -2,6 +2,8 @@ import displayio
 import adafruit_imageload
 
 import constants
+from util import LEFT, RIGHT, UP, DOWN
+
 
 def _load_sprite(name, width, height, tile_width, tile_height, default_tile, transparency=True):
     bitmap, palette = adafruit_imageload.load('/assets/' + name + '.bmp')
@@ -56,8 +58,8 @@ def load_all():
         'left': _load_shield_sprite(False, True)
     }
     sprites['firewall'] = {
-        'top': _load_firewall_sprite(constants.FIREWALL_HOR_TILE_SIZE, 1, constants.FIREWALL_HOR_SIZE, True, False, True),
-        'right': _load_firewall_sprite(constants.FIREWALL_VER_TILE_SIZE, 1, constants.FIREWALL_VER_SIZE, False, False, False),
-        'bottom': _load_firewall_sprite(constants.FIREWALL_HOR_TILE_SIZE, 1, constants.FIREWALL_HOR_SIZE, False, True, True),
-        'left': _load_firewall_sprite(constants.FIREWALL_VER_TILE_SIZE, 1, constants.FIREWALL_VER_SIZE, True, True, False),
+        UP: _load_firewall_sprite(constants.FIREWALL_HOR_TILE_SIZE, 1, constants.FIREWALL_HOR_SIZE, True, False, True),
+        RIGHT: _load_firewall_sprite(constants.FIREWALL_VER_TILE_SIZE, 1, constants.FIREWALL_VER_SIZE, False, False, False),
+        DOWN: _load_firewall_sprite(constants.FIREWALL_HOR_TILE_SIZE, 1, constants.FIREWALL_HOR_SIZE, False, True, True),
+        LEFT: _load_firewall_sprite(constants.FIREWALL_VER_TILE_SIZE, 1, constants.FIREWALL_VER_SIZE, True, True, False),
     }

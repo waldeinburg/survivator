@@ -19,7 +19,6 @@ class BeamEnemy(Enemy):
         self.speed = 100
         self.color = 0x00FF00
         self.fading = False
-        self.active = True
 
         self.cur_x = self.start_x
         self.cur_y = self.start_y

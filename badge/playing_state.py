@@ -2,6 +2,7 @@ import displayio
 from adafruit_display_text import label
 from vectorio import Rectangle
 import terminalio
+import random
 
 from state import State
 from sprites import sprites
@@ -83,13 +84,15 @@ class PlayingState(State):
         self.score_text.text = format_time(0)
         machine.play_info_group.append(self.score_text)
 
-        machine.play_root_group.append(machine.play_info_group)
 
         machine.play_area_group = displayio.Group(y=constants.INFO_HEIGHT)
         machine.enemy_warning_group = displayio.Group()
         machine.play_area_group.append(machine.enemy_warning_group)
         machine.play_area_group.append(self.hero_group)
+
+        # Info group should be on top because of sprites starting there position outside of play area.
         machine.play_root_group.append(machine.play_area_group)
+        machine.play_root_group.append(machine.play_info_group)
 
         machine.display.show(machine.play_root_group)
 
@@ -119,8 +122,10 @@ class PlayingState(State):
                     i += 1
                     continue
                 # Remove and continue to next by not incrementing i
+                machine.enemies_evaded += 1
                 enemy = machine.enemies.pop(i)
                 machine.play_area_group.remove(enemy.group)
+                enemy.destroy(machine)
 
             for enemy in machine.enemies:
                 if enemy.has_hit(machine):
@@ -207,16 +212,6 @@ class PlayingState(State):
 
 
     def maybe_add_enemy(self, machine):
-        #TODO: remove (test)
-        if len(machine.enemies) == 0:
-            machine.enemies.append(FirewallEnemy('LEFT', 0, 0, machine))
-        elif len(machine.enemies) == 1:
-            machine.enemies.append(FirewallEnemy('RIGHT', 0, 0, machine))
-        elif len(machine.enemies) == 2:
-            machine.enemies.append(FirewallEnemy('UP', 0, 0, machine))
-        elif len(machine.enemies) == 3:
-            machine.enemies.append(FirewallEnemy('DOWN', 0, 0, machine))
-
         if get_time_diff(machine.enemy_add_time, machine.cur_time) < \
                (machine.enemy_time_gap if not machine.waiting_for_first_enemy else first_enemy_appear):
             return
@@ -226,11 +221,27 @@ class PlayingState(State):
         enemy = self.get_random_enemy(machine)
         machine.enemies.append(enemy)
         machine.play_area_group.append(enemy.group)
+        machine.enemies_launched += 1
 
 
     def get_random_enemy(self, machine):
+        #TODO: remove (test)
+        if False:
+            if machine.enemies_launched == 0:
+                return FirewallEnemy('LEFT', 0, 0, machine)
+            elif machine.enemies_launched == 1:
+                return FirewallEnemy('RIGHT', 0, 0, machine)
+            elif machine.enemies_launched == 2:
+                return FirewallEnemy('UP', 0, 0, machine)
+            elif machine.enemies_launched == 3:
+                return FirewallEnemy('DOWN', 0, 0, machine)
+
         side, x, y = get_random_side_pos()
-        return BeamEnemy(side, x, y, machine)
+        enemy_type = random.choice((BeamEnemy, FirewallEnemy))
+        # If this type cannot be added with those parameters, default to BeamEnemy.
+        if not enemy_type.can_add(side, x, y, machine):
+            return BeamEnemy(side, x, y, machine)
+        return enemy_type(side, x, y, machine)
 
 
     def update_enemies(self, machine):

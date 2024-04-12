@@ -13,6 +13,10 @@ warning_color = 0xFFFF00
 
 class Enemy:
 
+    def can_add(side, start_x, start_y, machine):
+        return True
+
+
     def __init__(self, side, start_x, start_y, machine):
         self.group = displayio.Group()
         self.start_x = start_x
@@ -68,3 +72,7 @@ class Enemy:
 
     def has_hit(self, machine):
         return False
+
+    def destroy(self, machine):
+        pass
+
