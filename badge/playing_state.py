@@ -1,6 +1,7 @@
 import displayio
 from adafruit_display_text import label
-from vectorio import Rectangle
+from adafruit_display_shapes.rect import Rect
+
 import terminalio
 import random
 
@@ -16,6 +17,8 @@ score_almost_high = 5_000
 shield_active_time = 2_000
 shield_recharge_time = 500
 shield_fading_time = 1_500
+weapon_recharge_time = 500
+weapon_active_time = 100
 hero_max_x = constants.PLAY_WIDTH - constants.HERO_WIDTH
 hero_max_y = constants.PLAY_HEIGHT - constants.HERO_HEIGHT
 sprite_tilt_acc = 0.7
@@ -49,6 +52,11 @@ class PlayingState(State):
         self.add_shield_sprites(DOWN, (constants.SHIELD_WIDTH - constants.HERO_WIDTH) // -2, constants.HERO_HEIGHT)
         self.add_shield_sprites(LEFT, -constants.SHIELD_DEPTH, (constants.SHIELD_WIDTH - constants.HERO_HEIGHT) // -2)
 
+        self.weapon_sprite = sprites['weapon']
+        self.weapon_sprite.x = -(constants.WEAPON_WIDTH - constants.HERO_WIDTH) // 2
+        self.weapon_sprite.y = -(constants.WEAPON_HEIGHT - constants.HERO_HEIGHT) // 2
+        self.hero_group.append(self.weapon_sprite)
+
 
     def add_shield_sprites(self, orientation, x, y):
         s = sprites['shield'][orientation]
@@ -63,6 +71,8 @@ class PlayingState(State):
         self.hero_group.x = int(machine.pos_x)
         self.hero_group.y = int(machine.pos_y)
 
+        self.weapon_sprite.hidden = True
+
         for s in sides:
             self.reset_shield(s)
 
@@ -70,9 +80,7 @@ class PlayingState(State):
 
         machine.play_info_group = displayio.Group()
 
-        info_bg_palette = displayio.Palette(1)
-        info_bg_palette[0] = 0x303050
-        info_bg = Rectangle(x=0, y=0, width=constants.SCREEN_WIDTH, height=constants.INFO_HEIGHT, pixel_shader=info_bg_palette)
+        info_bg = Rect(x=0, y=0, width=constants.SCREEN_WIDTH, height=constants.INFO_HEIGHT, fill=0x303050)
         machine.play_info_group.append(info_bg)
 
         high_text = label.Label(terminalio.FONT, color=0xA0A0A0, anchor_point=(0.0, 1.0), anchored_position=(1, constants.INFO_HEIGHT))
@@ -112,6 +120,8 @@ class PlayingState(State):
         self.update_shield(machine, machine.input.btn_y, RIGHT)
         self.update_shield(machine, machine.input.btn_b, DOWN)
         self.update_shield(machine, machine.input.btn_x, LEFT)
+
+        self.update_weapon(machine)
 
         if not machine.is_hit:
             i = 0
@@ -165,6 +175,18 @@ class PlayingState(State):
             shield.active_time = machine.cur_time
             self.shield_sprites[orientation][0] = 0
             self.shield_sprites[orientation].hidden = False
+
+
+    def update_weapon(self, machine):
+        if not machine.weapon_active and \
+                machine.input.btn_ma and \
+                get_time_diff(machine.weapon_active_time, machine.cur_time) > weapon_recharge_time:
+            machine.weapon_active = True
+            machine.weapon_active_time = machine.cur_time
+            self.weapon_sprite.hidden = False
+        if machine.weapon_active and get_time_diff(machine.weapon_active_time, machine.cur_time) > weapon_active_time:
+            machine.weapon_active = False
+            self.weapon_sprite.hidden = True
 
 
     def update_positition(self, machine):

@@ -63,3 +63,8 @@ def load_all():
         DOWN: _load_firewall_sprite(constants.FIREWALL_HOR_TILE_SIZE, 1, constants.FIREWALL_HOR_SIZE, False, True, True),
         LEFT: _load_firewall_sprite(constants.FIREWALL_VER_TILE_SIZE, 1, constants.FIREWALL_VER_SIZE, True, True, False),
     }
+    sprites['weapon'] = _load_sprite(
+        'weapon',
+        width=1, height=1,
+        tile_width=constants.WEAPON_WIDTH, tile_height=constants.WEAPON_HEIGHT,
+        default_tile=0)

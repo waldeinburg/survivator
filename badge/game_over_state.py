@@ -17,6 +17,7 @@ class GameOverState(State):
         self.hero_explode_sprite = sprites['hero-explode']
         self.hero_explode_group = displayio.Group()
         self.hero_explode_group.append(self.hero_explode_sprite)
+        self.did_cleanup = False
 
 
     def enter(self, machine):
@@ -33,7 +34,9 @@ class GameOverState(State):
 
 
     def exit(self, machine):
-        self.cleanup(machine)
+        if not self.did_cleanup:
+            self.cleanup(machine)
+        self.did_cleanup = False
 
 
     def cleanup(self, machine):
@@ -41,6 +44,7 @@ class GameOverState(State):
             machine.play_area_group.remove(self.hero_explode_group)
         for e in machine.enemies:
             e.destroy(machine)
+        self.did_cleanup = True
 
 
     def update(self, machine):

@@ -87,6 +87,10 @@ class StateMachine:
             LEFT: ShieldState()
         }
 
+        self.weapon_active = False
+        # Inactive for an hour; so we don't have to check for None.
+        self.weapon_active_time = time_add(now(), -3600_000)
+
 
     def add_state(self, state):
         self.states[state.name] = state
