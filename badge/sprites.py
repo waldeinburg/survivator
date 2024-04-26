@@ -51,6 +51,11 @@ def load_all():
         width=1, height=1,
         tile_width=constants.HERO_EXPLODE_WIDTH, tile_height=constants.HERO_EXPLODE_HEIGHT,
         default_tile=0)
+    sprites['rocket'] = _load_sprite(
+        'rocket',
+        width=1, height=1,
+        tile_width=constants.ROCKET_WIDTH, tile_height=constants.ROCKET_HEIGHT,
+        default_tile=0)
     sprites['shield'] = {
         UP: _load_shield_sprite(False, False),
         RIGHT: _load_shield_sprite(True, True),

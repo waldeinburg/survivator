@@ -95,6 +95,20 @@ def get_hero_center(machine):
     )
 
 
+def get_direction_to_hero(x, y, vector_size, machine):
+    aim_x, aim_y = get_hero_center(machine)
+    dx = aim_x - x
+    if dx == 0:
+        dx = 0.000001
+    dy = aim_y - y
+    angle = math.atan(dy / dx)
+    dir_x = 1 if dx > 0 else -1
+    dir_y = 1 if dx > 0 else -1
+    vec_x = vector_size * math.cos(angle) * dir_x
+    vec_y = vector_size * math.sin(angle) * dir_y
+    return vec_x, vec_y, angle, dir_x, dir_y
+
+
 # Time functions using supervisor.ticks_ms to avoid floating point errors from time.monotonic.
 # Ticks does NOT necessarily start on 0 at startup! Therefore some code is taken from
 # https://docs.circuitpython.org/en/latest/shared-bindings/supervisor/index.html#supervisor.ticks_ms

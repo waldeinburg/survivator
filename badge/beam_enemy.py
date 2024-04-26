@@ -6,7 +6,7 @@ from adafruit_display_shapes.line import Line
 
 from enemy import Enemy
 import constants
-from util import get_hero_center
+from util import get_hero_center, get_direction_to_hero
 
 max_x = constants.PLAY_WIDTH - 1
 max_y = constants.PLAY_HEIGHT - 1
@@ -22,16 +22,8 @@ class BeamEnemy(Enemy):
 
         self.cur_x = self.start_x
         self.cur_y = self.start_y
-        self.aim_x, self.aim_y = get_hero_center(machine)
-        # Calculate velocity x and y based on angle of speed vector.
-        # Because we aim for the center, the diff will never be 0.
-        dx = self.aim_x - self.start_x
-        dy = self.aim_y - self.start_y
-        self.angle = math.atan(dy / dx)
-        self.dir_x = 1 if dx > 0 else -1
-        self.dir_y = 1 if dx > 0 else -1
-        self.vel_x = self.speed * math.cos(self.angle) * self.dir_x
-        self.vel_y = self.speed * math.sin(self.angle) * self.dir_y
+
+        self.vel_x, self.vel_y, self.angle, self.dir_x, self.dir_y = get_direction_to_hero(self.start_x, self.start_y, self.speed, machine)
 
 
     def update_enemy(self, machine):

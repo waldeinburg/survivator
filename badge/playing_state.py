@@ -9,6 +9,7 @@ from state import State
 from sprites import sprites
 from beam_enemy import BeamEnemy
 from firewall_enemy import FirewallEnemy
+from rocket_enemy import RocketEnemy
 import constants
 from util import LEFT, RIGHT, UP, DOWN, sides, get_random_side_pos, now, get_time_diff, format_time
 
@@ -23,9 +24,6 @@ hero_max_x = constants.PLAY_WIDTH - constants.HERO_WIDTH
 hero_max_y = constants.PLAY_HEIGHT - constants.HERO_HEIGHT
 sprite_tilt_acc = 0.7
 
-# Factor based on feeling. Is this really some crude application of intertia physics?
-# TODO: Brush up 20+ year old physics/math and do this properly. It could improve the feeling of the steering.`
-physics_scale = 0.01
 # Based on feeling
 bounce_factor = 0.31
 # 100 ms and a start gap of 5 seconds would give 50 enemies before the gap reaches 0 and the screen is flooded.
@@ -192,8 +190,8 @@ class PlayingState(State):
     def update_positition(self, machine):
         input = machine.input
         time_diff_sec = machine.time_diff / 1000
-        machine.vel_x += input.acc_x * time_diff_sec * physics_scale
-        machine.vel_y += input.acc_y * time_diff_sec * physics_scale
+        machine.vel_x += input.acc_x * time_diff_sec * constants.PHYSICS_SCALE
+        machine.vel_y += input.acc_y * time_diff_sec * constants.PHYSICS_SCALE
 
         dx = machine.vel_x * time_diff_sec * constants.PX_PER_M
         dy = machine.vel_y * time_diff_sec * constants.PX_PER_M
@@ -246,7 +244,7 @@ class PlayingState(State):
 
     def get_random_enemy(self, machine):
         side, x, y = get_random_side_pos()
-        enemy_type = random.choice((BeamEnemy, FirewallEnemy))
+        enemy_type = RocketEnemy #random.choice((BeamEnemy, FirewallEnemy, RocketEnemy))
         # If this type cannot be added with those parameters, default to BeamEnemy.
         if not enemy_type.can_add(side, x, y, machine):
             return BeamEnemy(side, x, y, machine)

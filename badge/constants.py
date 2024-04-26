@@ -20,6 +20,10 @@ HERO_EXPLODE_HEIGHT = 21
 SHIELD_WIDTH = 17
 SHIELD_DEPTH = 9
 
+ROCKET_SIZE = 7
+ROCKET_WIDTH = ROCKET_SIZE
+ROCKET_HEIGHT = ROCKET_SIZE
+
 FIREWALL_BITMAP_HEIGHT = 20
 FIREWALL_DEPTH = 15
 FIREWALL_HOR_TILES = 5
@@ -33,6 +37,10 @@ WEAPON_SIZE = 25
 WEAPON_RADIUS = WEAPON_SIZE / 2
 WEAPON_WIDTH = WEAPON_SIZE
 WEAPON_HEIGHT = WEAPON_SIZE
+
+# Factor based on feeling. Is this really some crude application of intertia physics?
+# TODO: Brush up 20+ year old physics/math and do this properly. It could improve the feeling of the steering.`
+PHYSICS_SCALE = 0.01
 
 # Screen width is 28 mm, resolution 128, i.e.:
 PX_PER_M = 4571

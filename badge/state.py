@@ -73,6 +73,7 @@ class StateMachine:
         self.enemy_time_gap = 5_000
         self.enemies_launched = 0
         self.enemies_evaded = 0
+        self.rocket = False
         self.firewalls = {
             UP: False,
             DOWN: False,
