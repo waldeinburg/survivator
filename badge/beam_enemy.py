@@ -6,11 +6,10 @@ from adafruit_display_shapes.line import Line
 
 from enemy import Enemy
 import constants
-from util import get_hero_center, get_direction_to_hero
+from util import get_hero_center, get_direction_to_hero, get_distance_to_hero
 
 max_x = constants.PLAY_WIDTH - 1
 max_y = constants.PLAY_HEIGHT - 1
-radius = constants.HERO_SIZE / 2
 
 class BeamEnemy(Enemy):
 
@@ -23,7 +22,7 @@ class BeamEnemy(Enemy):
         self.cur_x = self.start_x
         self.cur_y = self.start_y
 
-        self.vel_x, self.vel_y, self.angle, self.dir_x, self.dir_y = get_direction_to_hero(self.start_x, self.start_y, self.speed, machine)
+        self.vel_x, self.vel_y = get_direction_to_hero(self.start_x, self.start_y, self.speed, machine)
 
 
     def update_enemy(self, machine):
@@ -53,27 +52,4 @@ class BeamEnemy(Enemy):
 
 
     def has_hit(self, machine):
-        lx = self.cur_x
-        ly = self.cur_y
-        px, py = get_hero_center(machine)
-        dx = lx - px
-        dy = ly - py
-        a = self.angle
-
-        # Has tip hit?
-        point_distance = math.sqrt(dx**2 + dy**2)
-        if point_distance <= radius:
-            return True
-        # Has line passed?
-        ldx = lx - self.start_x
-        ldy = ly - self.start_y
-        dir_ldx = 1 if ldx > 0 else -1
-        dir_dx = 1 if dx > 0 else -1
-        dir_ldy = 1 if ldy > 0 else -1
-        dir_dy = 1 if dy > 0 else -1
-
-        if ldx == 0 or ldy == 0 or dir_ldx + dir_dx == 0 or dir_ldy + dir_dy == 0:
-            return False
-        # Does line hit?
-        line_distance = abs(math.cos(a) * dy - math.sin(a) * dx)
-        return line_distance <= radius
+        return get_distance_to_hero(self.start_x, self.start_y, self.cur_x, self.cur_y, machine) <= constants.HERO_RADIUS

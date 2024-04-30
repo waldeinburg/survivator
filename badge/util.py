@@ -102,11 +102,22 @@ def get_direction_to_hero(x, y, vector_size, machine):
         dx = 0.000001
     dy = aim_y - y
     angle = math.atan(dy / dx)
-    dir_x = 1 if dx > 0 else -1
-    dir_y = 1 if dx > 0 else -1
-    vec_x = vector_size * math.cos(angle) * dir_x
-    vec_y = vector_size * math.sin(angle) * dir_y
-    return vec_x, vec_y, angle, dir_x, dir_y
+    direction = 1 if dx > 0 else -1
+    vec_x = vector_size * math.cos(angle) * direction
+    vec_y = vector_size * math.sin(angle) * direction
+    return vec_x, vec_y
+
+
+def get_distance_to_hero(x1, y1, x2, y2, machine):
+    # https://math.stackexchange.com/a/2250212
+    hx, hy = get_hero_center(machine)
+    # Avoid division by zero if there's no line.
+    if x1 == x2 and y1 == y2:
+        return math.sqrt((x1-hx)**2 + (y1-hy)**2)
+    t = -((x1-hx)*(x2-x1) + (y1-hy)*(y2-y1)) / ((x2-x1)**2 + (y2-y1)**2)
+    if 0 <= t <=1:
+        return abs((x2-x1)*(y1-hy) - (y2-y1)*(x1-hx)) / math.sqrt((x2-x1)**2 + (y2-y1)**2)
+    return min(math.sqrt((x1-hx)**2 + (y1-hy)**2), math.sqrt((x2-hx)**2 + (y2-hy)**2))
 
 
 # Time functions using supervisor.ticks_ms to avoid floating point errors from time.monotonic.
