@@ -110,6 +110,11 @@ def get_direction_to_hero(x, y, vector_size, machine):
 
 def get_distance_to_hero(x1, y1, x2, y2, machine):
     # https://math.stackexchange.com/a/2250212
+    # Shortest distance between the path of the enemy and the path of the hero would be more precise,
+    # but is far more complex and could hurt performance. Regard it as a feature: You can, theoretically
+    # move so fast that you move through enemies. The other way around doesn't work well: The rocket
+    # moves back and forth through the hero until it's slow enough to hit if we just use the distance
+    # between enemy and hero location.
     hx, hy = get_hero_center(machine)
     # Avoid division by zero if there's no line.
     if x1 == x2 and y1 == y2:
@@ -140,6 +145,10 @@ def time_add(ticks, delta):
 def get_time_diff(a, b):
     "Compute the signed difference between two ticks values, assuming that they are within 2**28 ticks"
     return ((((b - a) & _TICKS_MAX) + _TICKS_HALFPERIOD) & _TICKS_MAX) - _TICKS_HALFPERIOD
+
+
+def get_one_hour_ago():
+    return time_add(now(), -3600_000)
 
 
 def format_time(time_ms):

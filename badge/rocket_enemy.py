@@ -3,7 +3,7 @@ import math
 from enemy import Enemy
 from sprites import sprites
 import constants
-from util import LEFT, RIGHT, UP, DOWN, get_hero_center, get_direction_to_hero, get_distance_to_hero
+from util import LEFT, RIGHT, UP, DOWN, get_hero_center, get_direction_to_hero, get_distance_to_hero, get_time_diff, get_one_hour_ago
 
 radius = constants.ROCKET_SIZE / 2
 hit_distance = constants.HERO_RADIUS + radius
@@ -12,6 +12,8 @@ min_x = -radius
 min_y = -radius
 max_x = constants.PLAY_WIDTH + radius
 max_y = constants.PLAY_HEIGHT + radius
+
+destroy_time_per_sprite = 150
 
 class RocketEnemy(Enemy):
 
@@ -25,6 +27,8 @@ class RocketEnemy(Enemy):
 
         self.hit = False
         self.destroyed = False
+        self.destroyed_last_update_time = get_one_hour_ago()
+        self.destroy_sprite_idx = 2
         self.acceleration = 2500
         self.init_speed = 80
         self.max_speed = self.init_speed
@@ -59,12 +63,24 @@ class RocketEnemy(Enemy):
         machine.rocket = False
 
 
+    def get_distance_to_hero(self, machine):
+        return get_distance_to_hero(self.last_cx, self.last_cy, self.cx, self.cy, machine)
+
+
     def update_enemy(self, machine):
         self.last_cx = self.cx
         self.last_c = self.cy
-        if machine.weapon_active and self.distance_to_hero(machine) < destroy_distance:
+        if machine.weapon_active and self.get_distance_to_hero(machine) < destroy_distance:
             self.destroyed = True
+            self.sprite[0] = self.destroy_sprite_idx
         if self.destroyed:
+            if get_time_diff(self.destroyed_last_update_time, machine.cur_time) >= destroy_time_per_sprite:
+                self.destroy_sprite_idx += 1
+                if self.destroy_sprite_idx == constants.ROCKET_TILES:
+                    self.active = False
+                else:
+                    self.sprite[0] = self.destroy_sprite_idx
+                    self.destroyed_last_update_time = machine.cur_time
             return
         time_diff_sec = machine.time_diff / 1000
         if not self.hit:
@@ -74,10 +90,11 @@ class RocketEnemy(Enemy):
         elif self.cx < min_x or self.cx > max_x or self.cy < min_y or self.cy > max_y:
             self.active = False
             return
-        # FIXME: This only work to one side. And it needs to limit the size of the vector
-        # or else the rocket can travel faster at an angle than horisontally or vertically.
-        self.vel_x = min(self.vel_x, self.max_speed)
-        self.vel_y = min(self.vel_y, self.max_speed)
+        speed = math.sqrt(self.vel_x**2 + self.vel_y**2)
+        if speed > self.max_speed:
+            f = self.max_speed / speed
+            self.vel_x *= f
+            self.vel_y *= f
         self.cx += self.vel_x * time_diff_sec
         self.cy += self.vel_y * time_diff_sec
         self.group.x = round(self.cx - radius)
@@ -91,7 +108,7 @@ class RocketEnemy(Enemy):
             return True
         # With high speed the rocket might travel through the point were it actually hits.
         # Use distance to line traveled.
-        if get_distance_to_hero(self.last_cx, self.last_cy, self.cx, self.cy, machine) < hit_distance:
+        if self.get_distance_to_hero(machine) < hit_distance:
             self.hit = True
             self.sprite[0] = 1
         return self.hit

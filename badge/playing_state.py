@@ -119,8 +119,6 @@ class PlayingState(State):
         self.update_shield(machine, machine.input.btn_b, DOWN)
         self.update_shield(machine, machine.input.btn_x, LEFT)
 
-        self.update_weapon(machine)
-
         if not machine.is_hit:
             i = 0
             while i < len(machine.enemies):
@@ -140,6 +138,7 @@ class PlayingState(State):
 
         if not machine.is_hit:
             self.update_positition(machine)
+            self.update_weapon(machine)
             self.update_sprite(machine)
             self.update_enemies(machine)
             self.maybe_add_enemy(machine)
@@ -244,7 +243,7 @@ class PlayingState(State):
 
     def get_random_enemy(self, machine):
         side, x, y = get_random_side_pos()
-        enemy_type = RocketEnemy #random.choice((BeamEnemy, FirewallEnemy, RocketEnemy))
+        enemy_type = random.choice((BeamEnemy, FirewallEnemy, RocketEnemy))
         # If this type cannot be added with those parameters, default to BeamEnemy.
         if not enemy_type.can_add(side, x, y, machine):
             return BeamEnemy(side, x, y, machine)

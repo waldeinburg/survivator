@@ -2,7 +2,7 @@ import displayio
 
 from state import State
 from sprites import sprites
-from util import get_time_diff
+from util import LEFT, RIGHT, UP, DOWN, get_time_diff
 import microbit
 import constants
 
@@ -24,6 +24,13 @@ class GameOverState(State):
         if machine.score > machine.highscore:
             machine.highscore = machine.score
             microbit.put_highscore(machine.score)
+
+        # Reset variables that may affect active enemies in rare cases.
+        machine.shields[UP].active = False
+        machine.shields[DOWN].active = False
+        machine.shields[LEFT].active = False
+        machine.shields[RIGHT].active = False
+        machine.weapon_active = False
 
         self.hero_explode_group.x = int(machine.pos_x - (constants.HERO_EXPLODE_WIDTH - constants.HERO_WIDTH) / 2)
         self.hero_explode_group.y = int(machine.pos_y - (constants.HERO_EXPLODE_HEIGHT - constants.HERO_HEIGHT) / 2)
