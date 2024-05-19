@@ -1,5 +1,7 @@
 # Survivator
 
+![Demo](images/demo.jpg)
+
 ## Backstory
 
 _Trapped in a dark area in Space (yes, I know, that's just how Space is, you get the point),
@@ -12,9 +14,9 @@ finish)?_
 Okay, sorry.
 
 Survivator is a simple arcade game made for the
-[BornHack 2022 Game On Badge](https://github.com/bornhack/badge2022) (disclaimer: I got the badge
-as a birthday present) using a [micro:bit](https://microbit.org) to get motion control and for
-saving high scores (because the CircuitPython system on the badge has a read-only file system).
+[BornHack 2022 Game On Badge](https://github.com/bornhack/badge2022) using a
+[micro:bit](https://microbit.org) to get tilting control and for saving high scores (because the
+CircuitPython system on the badge has a read-only file system).
 
 ## Setup
 
@@ -37,6 +39,10 @@ I suppose micro:bit V1 will also work. The following steps should get the game r
   the micro:bit.
 
 * Copy the contents of the `badge` folder to the badge.
+
+Here's a picture giving an impression of my assembly of the hardware:
+
+![Badge and micro:bit viewed from the side](images/assembly.jpg)
 
 ## Playing the game
 
